@@ -2,47 +2,16 @@
   "version": 1,
   "active_task": {
     "task_id": "aldervale-shared-step-v1",
-    "last_phase": "phase 2",
-    "active_phase": 2,
-    "status": "in_progress",
-    "updated_at": 1792940103.2361393,
+    "last_phase": "phase 4",
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1792940251.9043283,
     "owner": "kilo:review",
     "started_by": "kilo:review",
     "continuations": [],
-    "impact_assessment": {
-      "why": "Review of everything uncommitted since the last push found the browser session ran its own copy of the frame step: it advanced the world while menus were open, never entered the death state (so no death screen and no respawn), never armed the victory overlay, and let mouse events queue without bound. The one-click browser launcher also lacked the documented --version fast path PLAY.bat has.",
-      "benefits": "The browser build now pauses, dies and wins exactly like the terminal; one shared step removes the duplication that caused the drift; the launcher behaves like PLAY.bat.",
-      "risks": "contract: Game.tick is a new shared entry point; dependency: none; concurrency: the 20 fps session thread calls tick under its RLock; state: no save format change; behaviour: terminal loop must stay identical",
-      "mitigation": "Direct tests for Game.tick (menu freeze, death, victory clock) and WebGame.step delegation, bounded mouse queue, live Edge run of menu/death/respawn/victory, 170 tests and 4/4 gates"
-    }
+    "completed_at": 1792940252.1590464
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-weather-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Weather: deterministic rain streaks and drifting snow in screen space, applied after entities and before HUD; wet ground cools/darkens terrain in rain. Add rain-at-dusk and snow-at-night scenes to inspection and the Studio. [2/2] Verify structurally (glyph counts, HUD intact via Studio DOM, scene files) since no vision provider can read PNGs; add tests, README/ADR-020, run Phase 4.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792849600.8784695,
-      "timestamp_str": "2026-10-24 16:46:40",
-      "impact_assessment": {
-        "why": "Scenes are static and clear-weather only; weather is a high-impact visible improvement that uses the existing glyph/colour pipeline and costs only a few dozen cells per frame.",
-        "benefits": "Rain/snow add motion and atmosphere to screenshots and gameplay, wet ground ties rain to the terrain, and two new Studio scenes make the effect reviewable by a human.",
-        "risks": "contract: new world.weather attribute and two scenes; dependency: none; concurrency: none; state: weather is transient, not saved; perf: under 100 glyph writes per frame; visual: rain over the sunny sky would look wrong, so scenes use dusk/night.",
-        "mitigation": "Unit tests for overlay glyph counts/determinism, Studio DOM count and HUD row checks, 19-image inspection at three sizes, and no visual-quality claim without a provider that can read images."
-      }
-    },
-    {
-      "task_id": "aldervale-weather-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "Shipped deterministic weather: world.weather (clear/rain/snow) with screen-space rain streaks and drifting snow drawn above the world and below HUD; rain cools/darkens land through a new _terrain(wet=) factor. Added rain-at-dusk and snow-at-night scenes (18_rain, 19_snow), reset weather and quest state per scene, and generated 19 images at 132x60/80x40/40x20 plus Studio pages. Verified by a direct overlay glyph-count test and Studio DOM checks: rain scene has 100 overlay glyphs, the HP/Stamina/XP bars and gold location plate stay intact, and the quest line is active rather than leaking the victory state. No visual rating is claimed because no available vision provider can read PNGs (G-003).",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792850361.8944225,
-      "timestamp_str": "2026-10-24 16:59:21"
-    },
     {
       "task_id": "aldervale-weather-v1",
       "phase": "phase 4",
@@ -255,6 +224,27 @@
         "risks": "contract: Game.tick is a new shared entry point; dependency: none; concurrency: the 20 fps session thread calls tick under its RLock; state: no save format change; behaviour: terminal loop must stay identical",
         "mitigation": "Direct tests for Game.tick (menu freeze, death, victory clock) and WebGame.step delegation, bounded mouse queue, live Edge run of menu/death/respawn/victory, 170 tests and 4/4 gates"
       }
+    },
+    {
+      "task_id": "aldervale-shared-step-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Game.tick shared by terminal and browser; bounded mouse queue; PLAY_WEB --version fast path; ADR-025; 170 tests, 4/4 gates and a live Edge run of menu freeze, death, respawn and victory (checklists: passed)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792940251.9043283,
+      "timestamp_str": "2026-10-25 17:57:31",
+      "agent": "kilo:review"
+    },
+    {
+      "task_id": "aldervale-shared-step-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-shared-step-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792940252.1590474,
+      "timestamp_str": "2026-10-25 17:57:32",
+      "agent": "kilo:review"
     }
   ]
 }
