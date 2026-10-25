@@ -82,12 +82,13 @@ class Actor(Entity):
                  "state", "target_x", "target_z", "home_x", "home_z",
                  "home_r", "aggro_r", "attack_range", "attack_dmg",
                  "cooldown", "windup_t", "anim_t", "moving", "drops",
-                 "dead_t", "ai_kind", "flight_angle")
+                 "dead_t", "ai_kind", "flight_angle", "windup_s", "cd_base",
+                 "regen_acc")
 
     def __init__(self, eid, model, x, z, height, *, kind, hp, atk, dfn,
                  speed, xp_reward, aggro_r, attack_range, attack_dmg,
                  home_r=10.0, scale=1.0, drops=None, ai_kind="hostile",
-                 name=None, radius=None):
+                 name=None, radius=None, windup_s=0.55, cd_base=1.15):
         super().__init__(eid, model, x, z, height, scale=scale, name=name,
                          solid=True, radius=0.55 * scale)
         if radius is not None:
@@ -116,6 +117,9 @@ class Actor(Entity):
         self.dead_t = 0.0
         self.ai_kind = ai_kind
         self.flight_angle = 0.0
+        self.windup_s = windup_s
+        self.cd_base = cd_base
+        self.regen_acc = 0.0
 
     @property
     def dead(self):
@@ -126,7 +130,8 @@ class Player(Actor):
     """The hero: an Actor plus inventory, stamina and quest-facing state."""
 
     __slots__ = ("inventory", "attack_t", "attack_done", "hurt_t",
-                 "shrine_cd", "level", "xp", "stamina", "max_stamina")
+                 "shrine_cd", "level", "xp", "stamina", "max_stamina",
+                 "guarding", "heal_remaining")
 
     def __init__(self, eid, x, z):
         super().__init__(eid, "knight", x, z, 1.95, kind="player", hp=46,
@@ -143,6 +148,8 @@ class Player(Actor):
         self.xp = 0
         self.stamina = 100
         self.max_stamina = 100
+        self.guarding = False
+        self.heal_remaining = 0.0
 
     @property
     def attacking(self):
@@ -205,10 +212,23 @@ def update_actor(actor, dt, world, env):
         return
     dist_p = math.hypot(player.x - actor.x, player.z - actor.z)
     night_boost = 1.5 if env.night > 0.5 else 1.0
-    aggro = actor.aggro_r * night_boost if actor.kind == "skeleton" else actor.aggro_r
+    if actor.kind == "skeleton":
+        aggro = actor.aggro_r * night_boost
+    elif actor.kind == "wolf" and env.night > 0.5:
+        aggro = actor.aggro_r * 1.25
+    else:
+        aggro = actor.aggro_r
     if actor.state == "idle":
         actor.pose = "idle"
         actor.moving = False
+        if (actor.hp < actor.max_hp
+                and math.hypot(actor.x - actor.home_x,
+                               actor.z - actor.home_z) < 3.0):
+            actor.regen_acc += 0.6 * dt
+            gain = int(actor.regen_acc)
+            if gain:
+                actor.hp = min(actor.max_hp, actor.hp + gain)
+                actor.regen_acc -= gain
         if dist_p < aggro and not player.dead:
             actor.state = "chase"
         elif actor.anim_t > 4.0:
@@ -238,11 +258,17 @@ def update_actor(actor, dt, world, env):
         actor.moving = False
         actor.pose = "atk"
         actor.windup_t += dt
-        if actor.windup_t > 0.55:
+        if actor.windup_t > actor.windup_s:
             actor.windup_t = 0.0
-            actor.cooldown = 1.15 + world.rng.random() * 0.7
+            actor.cooldown = actor.cd_base + world.rng.random() * 0.7
             if dist_p <= actor.attack_range + 0.5 and not player.dead:
-                world.hit_player(actor.attack_dmg, actor)
+                ddx = player.x - actor.x
+                ddz = player.z - actor.z
+                dd = math.hypot(ddx, ddz) or 1.0
+                facing = (ddx * math.sin(actor.yaw)
+                          + ddz * math.cos(actor.yaw)) / dd
+                if facing >= 0.35:
+                    world.hit_player(actor.attack_dmg, actor)
             actor.state = "recover"
     elif actor.state == "recover":
         actor.moving = False
@@ -254,7 +280,6 @@ def update_actor(actor, dt, world, env):
         _walk_to(actor, actor.home_x, actor.home_z, world, dt, 0.8)
         if math.hypot(actor.home_x - actor.x, actor.home_z - actor.z) < 1.0:
             actor.state = "idle"
-            actor.hp = min(actor.max_hp, actor.hp + 2)
 
 
 def _walk_to(actor, tx, tz, world, dt, speed_factor):

@@ -8,7 +8,7 @@ from . import hud
 from .atlas import SpriteAtlas
 from .buffer import Screen
 from .entities import move_actor
-from .render import Camera, Env, render_scene
+from .render import Camera, Env, clear_camera_distance, render_scene
 from .rules import ITEMS, WEAPON_ORDER, ARMOR_ORDER
 from .term import Terminal
 from .world import World
@@ -36,7 +36,8 @@ class Game:
         self.state = "title"
         self.running = True
         self.cam_yaw = math.pi
-        self.cam_dist = 6.0
+        self.cam_dist = 4.6
+        self.cam_ease_d = 4.6
         self.cam = None
         self.menu_sel = 0
         self.dialogue = None
@@ -58,6 +59,7 @@ class Game:
         self.cam_pitch = 0.30
         self.walk_target = None
         self._drag = None
+        self._click_pending = None
         self.dt = 0.016
         self.help_from = "play"
         self.w = width or 132
@@ -99,17 +101,28 @@ class Game:
             return
         fx = math.sin(self.cam_yaw)
         fz = math.cos(self.cam_yaw)
-        cx = p.x - fx * self.cam_dist
-        cz = p.z - fz * self.cam_dist
+        far_x = p.x - fx * self.cam_dist
+        far_z = p.z - fz * self.cam_dist
+        far_y = max(w.terrain.height(far_x, far_z) + 2.9, p.ground_y + 2.3)
+        clear = clear_camera_distance(w.terrain, p.x, p.z, p.ground_y + 1.55,
+                                      fx, fz, far_y, self.cam_dist)
+        fresh = self.cam is None or force or self.cam.w != self.w or \
+            self.cam.h != self.h
+        if fresh:
+            self.cam_ease_d = clear
+        else:
+            self.cam_ease_d += (clear - self.cam_ease_d) * min(1.0, 0.30)
+        dist = max(2.4, self.cam_ease_d)
+        cx = p.x - fx * dist
+        cz = p.z - fz * dist
         ground = w.terrain.height(cx, cz)
-        target_y = max(ground + 2.9, p.ground_y + 2.3)
-        if self.cam is None or force or self.cam.w != self.w or \
-                self.cam.h != self.h:
+        target_y = max(ground + 2.8, p.ground_y + 2.3)
+        if fresh:
             self.cam_y = target_y
         else:
             self.cam_y += (target_y - self.cam_y) * min(1.0, 0.18)
         self.cam = Camera(self.w, self.h, cx, cz, self.cam_y, self.cam_yaw,
-                          pitch=self.cam_pitch, dist=self.cam_dist)
+                          pitch=self.cam_pitch, dist=dist)
 
     def run(self):
         """Main loop until the player quits or the demo expires."""
@@ -128,22 +141,33 @@ class Game:
                 self._demo_steer(dt)
                 if now >= demo_end:
                     self.running = False
-            env = Env(self.world.day_t, self.world.time)
-            if self.state in ("play", "title", "dead"):
-                self.world.update(dt, env)
-            self._sync_death()
-            if self.world.quest == "done" and not self.world.victory_shown:
-                self.world.victory_shown = True
-                self.victory_t = 0.0
-            if self.world.victory_shown:
-                self.victory_t += dt
+            env = self.tick(dt)
             self._render(env)
-            self._tick_fps(now)
             frame_budget = 1.0 / self.fps_cap
             elapsed = time.monotonic() - now
             if elapsed < frame_budget and self.term is not None:
                 time.sleep(frame_budget - elapsed)
         return 0
+
+    def tick(self, dt):
+        """Advance one simulation step and return the frame environment.
+
+        Shared by the terminal loop and the browser session, so both builds run
+        the world only in the states that should run, enter the death state on
+        the same frame and arm the victory overlay identically.
+        """
+        now = time.monotonic()
+        env = Env(self.world.day_t, self.world.time)
+        if self.state in ("play", "title", "dead"):
+            self.world.update(dt, env)
+        self._sync_death()
+        if self.world.quest == "done" and not self.world.victory_shown:
+            self.world.victory_shown = True
+            self.victory_t = 0.0
+        if self.world.victory_shown:
+            self.victory_t += dt
+        self._tick_fps(now)
+        return env
 
     def _sync_death(self):
         """Enter the dead game state once the player actor has fallen."""
@@ -181,7 +205,9 @@ class Game:
         if self.term is None:
             return
         pressed, held = self.term.poll()
-        if self.state == "play":
+        if self.state != "play":
+            self.world.player.guarding = False
+        if self.state in ("play", "title"):
             for ev in self.term.take_mouse():
                 self._on_mouse(ev)
         if pressed:
@@ -195,14 +221,23 @@ class Game:
         if self.state == "play":
             self._apply_movement_held(held)
 
+    def reset_pointer_state(self):
+        """Drop any pending drag, click or walk target (used on scene changes)."""
+        self._drag = None
+        self._click_pending = None
+        self.walk_target = None
+
     def _on_mouse(self, ev):
         kind, col, row, buttons, wheel = ev
         if kind == "resize":
             self._resize_check = 0
             return
+        if self.state == "title":
+            self._on_title_mouse(kind, col, row)
+            return
         if kind == "wheel":
             if wheel > 0:
-                self.cam_dist = max(3.5, self.cam_dist - 0.8)
+                self.cam_dist = max(3.0, self.cam_dist - 0.8)
             else:
                 self.cam_dist = min(15.0, self.cam_dist + 0.8)
             return
@@ -232,9 +267,33 @@ class Game:
             self._drag = (col, row) if (buttons & 0x2) else None
             return
         if kind == "ldown":
+            if self._drag is not None and not (buttons & 0x2):
+                self._drag = None
             if self._drag is None:
                 self._click_pending = (col, row)
             return
+
+    def _on_title_mouse(self, kind, col, row):
+        if kind == "ldown":
+            self._click_pending = (col, row)
+            return
+        if kind != "up":
+            return
+        pending = self._click_pending
+        self._click_pending = None
+        if pending is None or self.screen is None:
+            return
+        px, py = pending
+        if abs(col - px) > 2 or abs(row - py) > 2:
+            return
+        index = row - hud.title_menu_top(self.screen)
+        self._activate_title(index)
+
+    def _activate_title(self, index):
+        tokens = ("n", "c", "h", "q")
+        if 0 <= index < len(tokens):
+            self.menu_sel = index
+            self._key_title(tokens[index])
 
     def pick_world(self, col, row):
         """Screen cell to a world point using the depth buffer."""
@@ -279,10 +338,11 @@ class Game:
         self.walk_target = (tx, tz)
 
     def _apply_movement_held(self, held):
-        """Continuous movement, turning and sprint from held key tokens."""
+        """Continuous movement, turning, guard and sprint from held keys."""
         p = self.world.player
         if p.dead or p.attacking:
             p.moving = False
+            p.guarding = False
             return
         fwd = 0.0
         side = 0.0
@@ -298,6 +358,7 @@ class Game:
             self.cam_yaw -= 2.2 * self.dt
         if "right" in held:
             self.cam_yaw += 2.2 * self.dt
+        p.guarding = "b" in held and p.stamina >= 8.0
         if self.walk_target is not None:
             if fwd != 0.0 or side != 0.0:
                 self.walk_target = None
@@ -382,9 +443,10 @@ class Game:
             self.inv_message = "You are already hale."
             return
         p.inventory.remove("potion", 1)
-        p.hp = min(p.max_hp, p.hp + ITEMS["potion"].heal)
-        self.world.add_message("You drink a healing draught (+%d HP)." %
-                               ITEMS["potion"].heal, hud.GREEN)
+        p.heal_remaining += ITEMS["potion"].heal
+        self.world.add_message("You drink a healing draught (+%d HP over "
+                               "a few breaths)." % ITEMS["potion"].heal,
+                               hud.GREEN)
 
     def _equip_best(self):
         inv = self.world.player.inventory
@@ -423,13 +485,21 @@ class Game:
             self._try_interact()
             return
         if key in ("+", "="):
-            self.cam_dist = max(3.5, self.cam_dist - 0.7)
+            self.cam_dist = max(3.0, self.cam_dist - 0.7)
             return
         if key == "-":
             self.cam_dist = min(13.0, self.cam_dist + 0.7)
             return
 
     def _key_title(self, key):
+        if key in ("up", "w"):
+            self.menu_sel = (self.menu_sel - 1) % 4
+            return
+        if key in ("down", "s"):
+            self.menu_sel = (self.menu_sel + 1) % 4
+            return
+        if key in ("space", "enter"):
+            key = ("n", "c", "h", "q")[self.menu_sel]
         if key == "n":
             self.world = World(self.seed, self.atlas,
                                terrain_size=self.terrain_size)
@@ -505,9 +575,7 @@ class Game:
                 else:
                     self.shop_message = "You cannot afford that."
         else:
-            sellables = [iid for iid, cnt in
-                         sorted(w.player.inventory.counts.items())
-                         if cnt > 0 and iid != "amulet"]
+            sellables = [iid for iid, cnt in w.sellables()]
             if not sellables:
                 return
             n = len(sellables)
@@ -567,7 +635,10 @@ class Game:
                            os.path.exists(self.save_path))
         else:
             hud.draw_world_overlays(scr, self.world, self.cam)
-            hud.draw_hud(scr, self.world, env, self.fps, self.show_map)
+            modal = self.state in ("inventory", "help", "pause", "shop",
+                                   "dialogue")
+            if not modal and not self.world.player.dead:
+                hud.draw_hud(scr, self.world, env, self.fps, self.show_map)
             hud.draw_hurt_vignette(scr, self.world)
             if self.world.victory_shown:
                 hud.draw_victory(scr, self.world, self.victory_t)

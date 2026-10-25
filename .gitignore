@@ -8,3 +8,11 @@
 saves/
 __pycache__/
 *.pyc
+*.py[cod]
+
+# Headless inspection output (--inspect)
+.inspect/
+.inspect-*/
+inspect-out/
+
+node_modules/

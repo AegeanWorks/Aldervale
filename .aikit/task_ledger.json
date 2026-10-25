@@ -1,269 +1,260 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-models-v2",
-    "last_phase": "implementation",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1792690211.978227,
+    "task_id": "aldervale-shared-step-v1",
+    "last_phase": "phase 2",
+    "active_phase": 2,
+    "status": "in_progress",
+    "updated_at": 1792940103.2361393,
+    "owner": "kilo:review",
+    "started_by": "kilo:review",
+    "continuations": [],
     "impact_assessment": {
-      "why": "The user reported the character walking from mouse use and asked for models to look almost like real 3D models",
-      "benefits": "Drags no longer move the character; smooth shaded curved surfaces, cleaner dense silhouetted sprites that hold detail at distance, calmer ground shading",
-      "risks": "contract: Sprite gains lev levels for downsampling; face tuples carry a smooth flag; dependency: none; concurrency: none; state: none",
-      "mitigation": "8 new/updated tests (click release, drag cancel, flat-face single glyph, outline presence, Gouraud levels), full suite and gates green, boot 5.3s with progress display"
-    },
-    "completed_at": 1792690212.1155314
+      "why": "Review of everything uncommitted since the last push found the browser session ran its own copy of the frame step: it advanced the world while menus were open, never entered the death state (so no death screen and no respawn), never armed the victory overlay, and let mouse events queue without bound. The one-click browser launcher also lacked the documented --version fast path PLAY.bat has.",
+      "benefits": "The browser build now pauses, dies and wins exactly like the terminal; one shared step removes the duplication that caused the drift; the launcher behaves like PLAY.bat.",
+      "risks": "contract: Game.tick is a new shared entry point; dependency: none; concurrency: the 20 fps session thread calls tick under its RLock; state: no save format change; behaviour: terminal loop must stay identical",
+      "mitigation": "Direct tests for Game.tick (menu freeze, death, victory clock) and WebGame.step delegation, bounded mouse queue, live Edge run of menu/death/respawn/victory, 170 tests and 4/4 gates"
+    }
   },
   "checkpoints": [
     {
-      "task_id": "aldervale-lore-v1",
-      "phase": "implementation",
-      "phase_num": 3,
-      "description": "[1/1] Add LORE.md canon (Chronicle of the vale) and link it from README; gates 4/4; checklists: passed",
+      "task_id": "aldervale-weather-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Weather: deterministic rain streaks and drifting snow in screen space, applied after entities and before HUD; wet ground cools/darkens terrain in rain. Add rain-at-dusk and snow-at-night scenes to inspection and the Studio. [2/2] Verify structurally (glyph counts, HUD intact via Studio DOM, scene files) since no vision provider can read PNGs; add tests, README/ADR-020, run Phase 4.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792650600.4493144,
-      "timestamp_str": "2026-10-22 09:30:00",
+      "timestamp": 1792849600.8784695,
+      "timestamp_str": "2026-10-24 16:46:40",
       "impact_assessment": {
-        "why": "The project needs a canonical story foundation that all future narrative changes build upon, fitting the existing game elements",
-        "benefits": "Compelling canon: cosmology, six ages, sympathetic antagonist, character backstories, mystery hooks for five future acts, and a canon mapping table anchoring every in-game element",
-        "risks": "contract: lore must not contradict existing in-game dialogue; dependency: none; concurrency: none; state: docs only, no runtime change",
-        "mitigation": "Every canon claim cross-checked against existing NPC lines and mechanics; mapping table documents the correspondence"
+        "why": "Scenes are static and clear-weather only; weather is a high-impact visible improvement that uses the existing glyph/colour pipeline and costs only a few dozen cells per frame.",
+        "benefits": "Rain/snow add motion and atmosphere to screenshots and gameplay, wet ground ties rain to the terrain, and two new Studio scenes make the effect reviewable by a human.",
+        "risks": "contract: new world.weather attribute and two scenes; dependency: none; concurrency: none; state: weather is transient, not saved; perf: under 100 glyph writes per frame; visual: rain over the sunny sky would look wrong, so scenes use dusk/night.",
+        "mitigation": "Unit tests for overlay glyph counts/determinism, Studio DOM count and HUD row checks, 19-image inspection at three sizes, and no visual-quality claim without a provider that can read images."
       }
     },
     {
-      "task_id": "aldervale-lore-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-lore-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792650600.5806744,
-      "timestamp_str": "2026-10-22 09:30:00"
-    },
-    {
-      "task_id": "aldervale-lore-v2",
-      "phase": "implementation",
+      "task_id": "aldervale-weather-v1",
+      "phase": "phase 3",
       "phase_num": 3,
-      "description": "[1/1] Deepen the Chronicle canon: seven hearths, fixed chronology, Roll of the Keepers, liturgy, bestiary, five acts, expanded cast; gates 4/4; checklists: passed",
+      "description": "Shipped deterministic weather: world.weather (clear/rain/snow) with screen-space rain streaks and drifting snow drawn above the world and below HUD; rain cools/darkens land through a new _terrain(wet=) factor. Added rain-at-dusk and snow-at-night scenes (18_rain, 19_snow), reset weather and quest state per scene, and generated 19 images at 132x60/80x40/40x20 plus Studio pages. Verified by a direct overlay glyph-count test and Studio DOM checks: rain scene has 100 overlay glyphs, the HP/Stamina/XP bars and gold location plate stay intact, and the quest line is active rather than leaking the victory state. No visual rating is claimed because no available vision provider can read PNGs (G-003).",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792656470.2058325,
-      "timestamp_str": "2026-10-22 11:07:50",
+      "timestamp": 1792850361.8944225,
+      "timestamp_str": "2026-10-24 16:59:21"
+    },
+    {
+      "task_id": "aldervale-weather-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 green: 141 tests (59.7s), hygiene, guidelines/map and secrets pass 4/4. Inspection writes 19 images (17 scenes + sprite/portrait sheets) and 17/17 control checks at 132x60, 80x40 and 40x20; rain/snow scenes included in all Studio pages. Benchmarks 24.4 ms/frame at 132x60 (~41 fps uncapped, 30 fps cap), boot 7.6s. Weather is verified structurally (overlay glyph counts, HUD rows intact, active quest) and visually available to a human via .inspect/index.html; no aesthetic rating is claimed under G-003. README and ADR-020 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792850374.4226258,
+      "timestamp_str": "2026-10-24 16:59:34"
+    },
+    {
+      "task_id": "aldervale-weather-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-weather-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792850374.6068747,
+      "timestamp_str": "2026-10-24 16:59:34"
+    },
+    {
+      "task_id": "aldervale-web-launcher-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Web-based Start button: localhost-only stdlib HTTP launcher with a branded page, token-protected /start, fixed play/demo commands, Windows new-console spawn, Studio served at /studio/ with traversal guards, port validation and error triads. [2/2] End-to-end verification in Edge (Start spawned a real game process; Studio served 8 models), HTTP/unit/CLI tests, README/ADR-022, Phase 4.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792854381.708486,
+      "timestamp_str": "2026-10-24 18:06:21",
       "impact_assessment": {
-        "why": "The canon needed depth and a consistent internal clock to support the five-act saga and all future story changes",
-        "benefits": "Complete world map of the seven hearths, eleven-entry Keeper register seeding future quests, fixed audit countdown, sympathetic villain mechanics via the choosing circlet, and act structure with promises and costs",
-        "risks": "contract: v2 rewrites v1 canon (Long Winter timing moved to year 99, circlet binds Corvin); dependency: none; concurrency: none; state: docs only",
-        "mitigation": "Chronology table now pins all dates; every game-dialogue line re-checked for consistency; canon mapping table extended"
+        "why": "The user asked for a web-based start button; browsers cannot spawn local processes directly, and a full in-browser game server is a much larger change. A localhost launcher starts the real game honestly and links the Studio.",
+        "benefits": "One local page covers Start Game, Watch Demo and the browser Studio; no Python dependency; the game still runs natively with full input performance.",
+        "risks": "contract: new --serve/--open flags and localhost HTTP surface; security: arbitrary process spawn if unguarded; dependency: none; concurrency: ThreadingHTTPServer can field parallel /start calls, so repeated clicks can open multiple games though only fixed commands are possible; state: no persisted launcher state; platform: automatic terminal launch is Windows-only.",
+        "mitigation": "Localhost bind, random per-process token on every launch, fixed command list, no request-supplied paths/args, traversal-guarded Studio file serving, port validation, HTTP/unit tests and a real Edge click that spawned and then stopped the game process."
       }
     },
     {
-      "task_id": "aldervale-lore-v2",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-lore-v2' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792656470.3411677,
-      "timestamp_str": "2026-10-22 11:07:50"
-    },
-    {
-      "task_id": "aldervale-lore-v3",
-      "phase": "implementation",
+      "task_id": "aldervale-web-launcher-v1",
+      "phase": "phase 3",
       "phase_num": 3,
-      "description": "[1/1] Chronicle third edition: six hearths in full (Hollowmere fall, Graywater, Brackle, Sarles, Saltmere), Roll of Champions, audit anatomy, artifacts, year-wheel, sayings, songs, Act II treatment; gates 4/4; checklists: passed",
+      "description": "Shipped launcher.py: ThreadingHTTPServer on 127.0.0.1 with a branded START GAME/WATCH DEMO page, random token required on POST /start, fixed argv (never request-supplied), Windows CREATE_NEW_CONSOLE launch, Studio served from .inspect under /studio/ with flat-name traversal guards, health and favicon endpoints, and --serve/--open/port validation in the CLI. End-to-end verified in Edge: the page rendered, the Start click returned success and spawned real PID 20944 (then stopped), and /studio/ served the Studio with all 8 models. The hygiene gate flagged the intentional detached Popen, webbrowser.open and silent Ctrl+C; fixed with an explicit hygiene rationale, open_new_tab, and a stop message.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792658953.171098,
-      "timestamp_str": "2026-10-22 11:49:13",
+      "timestamp": 1792854412.2987766,
+      "timestamp_str": "2026-10-24 18:06:52"
+    },
+    {
+      "task_id": "aldervale-web-launcher-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 green: 151 tests (56.8s), hygiene, guidelines/map and secrets pass 4/4 after fixing the launcher hygiene findings. End-to-end: --serve on 127.0.0.1:8791 rendered the launcher page (START GAME / WATCH DEMO / Open Studio / Health), the Start click in headless Edge returned 'Game launched in a new console window' and spawned a real python -m aldervale process (PID 20944, stopped after verification), and /studio/ served the Studio with 8 models. Screenshots shot-launcher.png and shot-studio-served.png captured. Security: localhost bind, per-process token on /start, fixed commands, traversal-guarded Studio files, port validation; --open without --serve and bad ports fail with triads. Benchmark 20.5 ms/frame at 132x60, boot 6.7s. README and ADR-022 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792854438.7891388,
+      "timestamp_str": "2026-10-24 18:07:18"
+    },
+    {
+      "task_id": "aldervale-web-launcher-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-web-launcher-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792854438.9703553,
+      "timestamp_str": "2026-10-24 18:07:18"
+    },
+    {
+      "task_id": "aldervale-one-click-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] True one-click start: --autostart (with --serve) opens the launcher at ?autostart=1; the page strips the query, sets a one-shot session guard and launches the game automatically. Add PLAY_WEB.bat (Windows double-click) and play_web.sh, plus idempotent serve (health check reopens the page instead of failing). [2/2] Add a 2-second server-side duplicate-launch guard, HTTP/unit/CLI tests, README/ADR-023, and Phase 4.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792859600.2900062,
+      "timestamp_str": "2026-10-24 19:33:20",
       "impact_assessment": {
-        "why": "The canon's referenced events (Hollowmere's fall, the Champions, the audit) were indices without accounts; the saga needed them told",
-        "benefits": "Complete account of Alaric's wound and the frost-unwrites rule, a quest-ready year-wheel and proverb bank, dialogue-ready songs, and the Act II pattern for detailing future acts",
-        "risks": "contract: v3 adds dates 353/355/390 and the Second Chronicle; dependency: none; concurrency: none; state: docs only",
-        "mitigation": "Chronology table extended consistently; Hollowmere account reconciled with all v2 references and dramatis entries"
+        "why": "The web Start button still needed a terminal command first; the user asked for one-click start, and launching a second server on the same port failed instead of reopening the page.",
+        "benefits": "Double-clicking PLAY_WEB.bat starts the launcher, opens the browser and starts the real native game with no further click; reloads and double-clicks cannot spawn duplicate games; a second launch just reopens the page.",
+        "risks": "contract: --autostart flag, autostart query and one-click launcher files; security: autostart only with the per-process token, localhost bind and fixed commands; dependency: none; concurrency: ThreadingHTTPServer plus a lock and a 2 s same-mode coalescing window; state: only client sessionStorage; platform: automatic terminal launch remains Windows-only, POSIX gets the page and exact command.",
+        "mitigation": "HTTP tests for page/token/duplicate coalescing/health, unit tests for URL/token/traversal, CLI tests for autostart/port/open validation, launcher-file tests, and a real Edge autostart run (status success, query stripped, session flag set)."
       }
     },
     {
-      "task_id": "aldervale-lore-v3",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-lore-v3' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792658953.309379,
-      "timestamp_str": "2026-10-22 11:49:13"
-    },
-    {
-      "task_id": "aldervale-story-data-v1",
-      "phase": "implementation",
+      "task_id": "aldervale-one-click-v1",
+      "phase": "phase 3",
       "phase_num": 3,
-      "description": "[1/1] Extract narrative data to aldervale/story.py (cast, dialogues, quest objectives), name the gate twins from canon, add ADAPTATION.md bridge guide, 9 new tests; gates 4/4; checklists: passed",
+      "description": "Shipped one-click start: --autostart (requires --serve) opens the launcher at /?autostart=1; the page strips the query, sets sessionStorage guard, and POSTs the token-protected play request. serve() health-checks the port and, if a launcher already owns it, only reopens the browser. Added a 2 s same-mode duplicate-launch lock so double-clicks/reloads cannot spawn two games. Added PLAY_WEB.bat (Windows double-click: serve + browser + autostart) and play_web.sh, plus README tree and ADR-023. Verified in Edge: /?autostart=1 returned 'Game launched in a new console window', history lost the query, and the one-shot flag was set; earlier Start-path verification had already spawned a real game process. HTTP tests cover token rejection, duplicate coalescing, health; unit/CLI tests cover URL helpers, traversal, autostart/port/open validation and launcher files.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792660678.3262382,
-      "timestamp_str": "2026-10-22 12:17:58",
+      "timestamp": 1792859683.0864377,
+      "timestamp_str": "2026-10-24 19:34:43"
+    },
+    {
+      "task_id": "aldervale-one-click-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 green: 155 tests (86.8s under load), hygiene, guidelines/map and secrets pass 4/4. One-click verified in Edge: /?autostart=1 launched via token, status 'Game launched in a new console window', URL query stripped and sessionStorage guard set; service idempotence and duplicate coalescing covered by HTTP tests; PLAY_WEB.bat/play_web.sh checked by launcher tests. Benchmark 26.2 ms/frame at 132x60 (~38 fps uncapped, 30 fps cap), boot 8.4s. README documents PLAY_WEB.bat, --autostart, idempotent serve and the Windows-only automatic launch; ADR-023 records the design. No aesthetic rating is claimed (G-003). checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792859717.4929473,
+      "timestamp_str": "2026-10-24 19:35:17"
+    },
+    {
+      "task_id": "aldervale-one-click-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-one-click-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792859717.7146134,
+      "timestamp_str": "2026-10-24 19:35:17"
+    },
+    {
+      "task_id": "aldervale-web-edition-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Browser edition on the same engine: WebGame + WebTerm, 20 fps session thread, chars/colour frames, canvas client with keyboard/mouse, token-protected input, lazy 9 s forge, idle pause, separate web save. [2/3] Launcher integration: /play, /api/frame, /api/state, /api/input, PLAY IN BROWSER, --open-play; PLAY_WEB.bat/play_web.sh open the browser game directly while PLAY.bat/terminal stays unchanged. [3/3] Verify live in Edge (canvas, movement, menus, save/continue), add unit/HTTP tests, README/ADR-024, Phase 4.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792864245.895628,
+      "timestamp_str": "2026-10-24 20:50:45",
+      "agent": "unidentified",
       "impact_assessment": {
-        "why": "Story changes were buried inside world.py simulation code, making canon adaptation risky and manual",
-        "benefits": "Single source of narrative truth consumed by world/entities; canon twins now spawn by name; documented canon-to-code bridge with authoring guide, extension pattern and compliance checklist",
-        "risks": "contract: story.py payload format must stay (name/pages/choices); dependency: entities now imports story (no cycle); concurrency: none; state: save format unchanged",
-        "mitigation": "Failing-first tests pin cast, twin names, dialogue coverage and quest states; full 66-test suite and 4/4 gates green"
+        "why": "The user clarified they wanted the game itself in both the browser and the current terminal; a launcher/Studio alone did not satisfy that.",
+        "benefits": "The browser runs the real Python game with no duplicated logic and no new dependency; the terminal build remains the canonical experience, and both share worlds, HUD, weather and saves per slot.",
+        "risks": "contract: new /play, /api/frame, /api/state and /api/input endpoints plus --open-play; security: /api/input is token-protected and the server binds localhost, while frame/state reads are local-only and unauthenticated; dependency: none; concurrency: a 20 fps session thread guarded by an RLock, one shared session across tabs; state: web saves go to saves/aldervale_web.json and the terminal save is untouched; resource: the session pauses after 20 s without polling.",
+        "mitigation": "Live Playwright verification of canvas size/render time/movement/menus/save/continue, HTTP tests for frame/state/input/auth, unit tests for WebTerm and frame encoding, 162 tests and 4/4 gates, separate save slot and idle pause."
       }
     },
     {
-      "task_id": "aldervale-story-data-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-story-data-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792660678.4722834,
-      "timestamp_str": "2026-10-22 12:17:58"
-    },
-    {
-      "task_id": "aldervale-launch-v1",
-      "phase": "implementation",
+      "task_id": "aldervale-web-edition-v1",
+      "phase": "phase 3",
       "phase_num": 3,
-      "description": "[1/1] One-click run: PLAY.bat (Windows Terminal preferred, py/python fallback, CI-safe --version fast path), run.sh (POSIX), .vscode launch.json F5 configs, README docs, 3 failing-first tests; gates 4/4; checklists: passed",
+      "description": "Shipped the browser edition: webgame.py (WebTerm, encode_frame, WebGame at 20 fps, RLock input, lazy build, idle pause), /play canvas client (fit-to-window, per-colour runs, keyboard/mouse/right-drag/wheel, HUD/fps, loading forge), token-protected /api/input, /api/frame and /api/state, launcher PLAY IN BROWSER, --open-play, and PLAY_WEB.bat/play_web.sh targeting the browser directly. Web saves use saves/aldervale_web.json; the terminal build and its save are untouched. Live Edge run: ready in 9.1 s, canvas 792x660, render 3.5 ms, 20 fps, WASD moved 2.28 m, inventory opened/closed, save-and-quit created the web save, and continue resumed play. Added WebTerm/encode unit tests and frame/state/input auth HTTP tests.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792665247.1260848,
-      "timestamp_str": "2026-10-22 13:34:07",
+      "timestamp": 1792864272.1057866,
+      "timestamp_str": "2026-10-24 20:51:12",
+      "agent": "unidentified"
+    },
+    {
+      "task_id": "aldervale-web-edition-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Phase 4 green: 162 tests (61.7s), hygiene, guidelines/map and secrets pass 4/4. Live Edge verification of /play: forge 9.1 s, canvas 792x660, 3.5 ms render, 20 fps, WASD moved 2.28 m, inventory opened/closed, save-and-quit wrote saves/aldervale_web.json, continue resumed play; screenshot .inspect/shot-web-play.png (183 KB). Terminal build and save are unchanged. One-click PLAY_WEB.bat/play_web.sh now open the browser edition; the launcher exposes START GAME, WATCH DEMO, PLAY IN BROWSER and Studio. Benchmark 22.7 ms/frame at 132x60, boot 7.3 s. README and ADR-024 document the dual build and the localhost/single-session limits. No aesthetic rating is claimed (G-003); the canvas and page are directly inspectable. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792864296.090289,
+      "timestamp_str": "2026-10-24 20:51:36",
+      "agent": "unidentified"
+    },
+    {
+      "task_id": "aldervale-web-edition-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-web-edition-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792864296.2806604,
+      "timestamp_str": "2026-10-24 20:51:36",
+      "agent": "unidentified"
+    },
+    {
+      "task_id": "aldervale-review-fixes-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/1] Fix launcher parity, README badge/licensing/tree drift discovered by review",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792935902.115531,
+      "timestamp_str": "2026-10-25 16:45:02",
+      "agent": "kilo:review",
       "impact_assessment": {
-        "why": "Launching the game required typing a module command; the user asked for a one-click run button",
-        "benefits": "Double-click play on Windows, one-command on POSIX, F5 in VS Code, with graceful Python-missing messaging",
-        "risks": "contract: launchers must stay at project root next to the package; dependency: wt.exe optional, py/python either; concurrency: none; state: none",
-        "mitigation": "Launchers tested via --version fast path that opens no windows; explicit-path subprocess test avoids NoDefaultCurrentDirectoryInExePath quirks"
+        "why": "Review of the uncommitted aldervale work found four concrete defects: PLAY_WEB.bat assumed a 'python' on PATH while PLAY.bat falls back to the py launcher and prints a friendly install message; the README tree omitted launcher.py; COMMERCIAL.md was seeded but absent from the tree and no License section existed although LICENSE now carries the dual-licensing notice pointing at it; and the badge still linked the pre-move Aegean-E AIKit repository.",
+        "benefits": "One-click browser start works on py-launcher-only Windows machines, the documented tree matches the package, the licence notice resolves to a tracked COMMERCIAL.md, and portfolio links point at the current repository.",
+        "risks": "contract: none, docs and launcher scripts only; dependency: none; concurrency: none; state: none",
+        "mitigation": "Failing-first tests for launcher detection and README completeness, 164 tests, 4/4 gates"
       }
     },
     {
-      "task_id": "aldervale-launch-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-launch-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792665247.2950668,
-      "timestamp_str": "2026-10-22 13:34:07"
-    },
-    {
-      "task_id": "aldervale-launch-fix-v1",
-      "phase": "implementation",
-      "phase_num": 3,
-      "description": "[1/1] Fix PLAY.bat wt launch: %~dp0 trailing backslash escaped the closing quote so wt swallowed the command line as -d; use %CD% instead; regression test pins the quoting; verified live wt launch lands in the project root; gates 4/4; checklists: passed",
+      "task_id": "aldervale-review-fixes-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/1] 164 tests pass, 4/4 gates green; launcher parity and README drift fixed (checklists: passed); PRINCIPLE-018 commit/push skipped because the user did not authorize a commit",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792672976.9611251,
-      "timestamp_str": "2026-10-22 15:42:56",
-      "impact_assessment": {
-        "why": "User hit error 0x8007010b: the -d directory argument ended in a backslash-quote that escaped under CommandLineToArgvW parsing",
-        "benefits": "Double-click launch works in Windows Terminal; quoting hazard pinned by test so it cannot return",
-        "risks": "contract: PLAY.bat must cd before using %CD%; dependency: none new; concurrency: none; state: none",
-        "mitigation": "cd /d %~dp0 runs first in the bat; live wt probe confirmed the working directory; full suite 70/70 and gates green"
-      }
+      "timestamp": 1792935907.1110027,
+      "timestamp_str": "2026-10-25 16:45:07",
+      "agent": "kilo:review"
     },
     {
-      "task_id": "aldervale-launch-fix-v1",
+      "task_id": "aldervale-review-fixes-v1",
       "phase": "completed",
       "phase_num": 5,
-      "description": "Task 'aldervale-launch-fix-v1' completed successfully.",
+      "description": "Task 'aldervale-review-fixes-v1' completed successfully.",
       "status": "completed",
-      "timestamp": 1792672977.0973995,
-      "timestamp_str": "2026-10-22 15:42:57"
+      "timestamp": 1792935919.950291,
+      "timestamp_str": "2026-10-25 16:45:19",
+      "agent": "kilo:review"
     },
     {
-      "task_id": "aldervale-input-v1",
-      "phase": "implementation",
-      "phase_num": 3,
-      "description": "[1/1] Fix dead controls and messy graphics: held-key polling via ReadConsoleInputW (true keydown/keyup, Shift sprint), arrows walk/turn, space-token mismatch fixed (attack and menu confirms were dead), viewport-accurate terminal size, world-anchored terrain dither, calmer sky; PLAY.bat drops the start layer; 5 held-control tests; 75/75; gates 4/4; checklists: passed",
+      "task_id": "aldervale-shared-step-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Deliver the accumulated web edition, launcher, weather and model work; fix the browser session diverging from the terminal loop",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792676237.9877021,
-      "timestamp_str": "2026-10-22 16:37:17",
+      "timestamp": 1792940103.2361393,
+      "timestamp_str": "2026-10-25 17:55:03",
+      "agent": "kilo:review",
       "impact_assessment": {
-        "why": "Holding WASD did nothing (keys were edge-dispatched to a handler with no movement branches); SPACE and menu confirms compared against a token the terminal never emits; screen-space dither crawled into noise in motion; get_terminal_size reported the scrollback buffer so rows wrapped",
-        "benefits": "Character moves continuously and smoothly, arrows are a full control scheme, sprint works, attack/confirm work, terrain texture is stable, frame size fits the viewport",
-        "risks": "contract: term.poll() replaces per-key reads for the game loop (read_key stays as POSIX primitive); dependency: ctypes structures defined lazily on Windows only; concurrency: none; state: none",
-        "mitigation": "Failing-first held-control tests, full 75-test suite, gates green, and the real PLAY.bat verified end-to-end (WindowsTerminal+cmd+python processes running the game)"
+        "why": "Review of everything uncommitted since the last push found the browser session ran its own copy of the frame step: it advanced the world while menus were open, never entered the death state (so no death screen and no respawn), never armed the victory overlay, and let mouse events queue without bound. The one-click browser launcher also lacked the documented --version fast path PLAY.bat has.",
+        "benefits": "The browser build now pauses, dies and wins exactly like the terminal; one shared step removes the duplication that caused the drift; the launcher behaves like PLAY.bat.",
+        "risks": "contract: Game.tick is a new shared entry point; dependency: none; concurrency: the 20 fps session thread calls tick under its RLock; state: no save format change; behaviour: terminal loop must stay identical",
+        "mitigation": "Direct tests for Game.tick (menu freeze, death, victory clock) and WebGame.step delegation, bounded mouse queue, live Edge run of menu/death/respawn/victory, 170 tests and 4/4 gates"
       }
-    },
-    {
-      "task_id": "aldervale-input-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-input-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792676238.135749,
-      "timestamp_str": "2026-10-22 16:37:18"
-    },
-    {
-      "task_id": "aldervale-res-v1",
-      "phase": "implementation",
-      "phase_num": 3,
-      "description": "[1/1] Resolution upgrade: viewport caps 260x110, maximized dedicated WT window in PLAY.bat (-w -1 --maximized, verified live at 209x51), denser actor sprite baking (24->30 cells/unit), input hardening (typed handles, console-handle validation, msvcrt fallback), title-flow tests; 78/78; gates 4/4; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792684283.6609704,
-      "timestamp_str": "2026-10-22 18:51:23",
-      "impact_assessment": {
-        "why": "The game rendered at the terminal default 120x30 (~3.6k cells) and actor sprites baked at 24 cells/unit; the user asked for higher resolution",
-        "benefits": "Maximized launch nearly doubles visible cells (209x51 verified), user window size scales up to 260x110, characters/creatures carry 25 percent more baked detail, and the event-input path now self-validates with a guaranteed fallback",
-        "risks": "contract: size caps and --width/--height ranges widened; dependency: wt -w/--maximized needs a modern Windows Terminal (verified on this machine, console fallback exists); concurrency: none; state: none",
-        "mitigation": "Live API probe confirmed srWindow 209x51 in the maximized window; benchmarks 24ms at 200x90 and 31ms at 250x105 keep the 30fps cap; full suite and gates green"
-      }
-    },
-    {
-      "task_id": "aldervale-res-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-res-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792684283.800441,
-      "timestamp_str": "2026-10-22 18:51:23"
-    },
-    {
-      "task_id": "aldervale-3d-v1",
-      "phase": "implementation",
-      "phase_num": 3,
-      "description": "[1/1] 3D + mouse + model fidelity: console-event mouse (orbit-drag, wheel zoom, click-to-walk/attack via depth picking), free-look camera pitch, 20 yaw frames, 36 cells/unit actor bakes, flat shading with silhouette outlines, knight emblem/knee plates, villager eyes, load progress; 87/87; gates 4/4; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792686728.7637458,
-      "timestamp_str": "2026-10-22 19:32:08",
-      "impact_assessment": {
-        "why": "Players asked for mouse control, a real 3D camera and models that read as solid shapes rather than dithered noise",
-        "benefits": "Full 3D look (orbit/tilt/zoom), one-click walk-talk-attack, dramatically cleaner outlined models, visible loading progress",
-        "risks": "contract: term.take_mouse() and game.pick_world()/dt are public API; mouse is Windows-only (keyboard parity kept); dependency: console MOUSE_EVENT support, msvcrt fallback retained; state: none",
-        "mitigation": "8 new tests pin mouse normalization, orbit, zoom, picking, walk-to, click-attack and sprite outline/flat shading; full suite and gates green"
-      }
-    },
-    {
-      "task_id": "aldervale-3d-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-3d-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792686728.888635,
-      "timestamp_str": "2026-10-22 19:32:08"
-    },
-    {
-      "task_id": "aldervale-models-v2",
-      "phase": "implementation",
-      "phase_num": 3,
-      "description": "[1/1] Model fidelity pass: Gouraud vertex-normal shading for curved geometry, 56 cells/unit actor bakes (2.4x pixels), luminance-aware 2x2 downsampling in blit, click-on-release mouse (drags never walk), terrain light smoothing, richer geometry (knight gorget/pauldrons/visor cross/rivets/shield rim/blade highlight, wolf fangs/eye shine/tail tip, captain crown gems/cape hem, villager belts, window bars, castle arrow slits), camera default 6m; 88/88; gates 4/4; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792690211.978227,
-      "timestamp_str": "2026-10-22 20:30:11",
-      "impact_assessment": {
-        "why": "The user reported the character walking from mouse use and asked for models to look almost like real 3D models",
-        "benefits": "Drags no longer move the character; smooth shaded curved surfaces, cleaner dense silhouetted sprites that hold detail at distance, calmer ground shading",
-        "risks": "contract: Sprite gains lev levels for downsampling; face tuples carry a smooth flag; dependency: none; concurrency: none; state: none",
-        "mitigation": "8 new/updated tests (click release, drag cancel, flat-face single glyph, outline presence, Gouraud levels), full suite and gates green, boot 5.3s with progress display"
-      }
-    },
-    {
-      "task_id": "aldervale-models-v2",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-models-v2' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792690212.115533,
-      "timestamp_str": "2026-10-22 20:30:12"
     }
   ]
 }

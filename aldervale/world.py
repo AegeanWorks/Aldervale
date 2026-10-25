@@ -19,6 +19,27 @@ HEAL_COLOR = pack_rgb(120, 220, 130)
 INFO_COLOR = pack_rgb(200, 210, 230)
 XP_COLOR = pack_rgb(150, 190, 255)
 QUEST_COLOR = pack_rgb(240, 210, 120)
+BLOCK_COLOR = pack_rgb(140, 190, 240)
+FOE_COLOR = pack_rgb(255, 210, 150)
+WEATHER_COLOR = pack_rgb(154, 184, 218)
+SANCTUARY_R = 26.0
+
+HOSTILE_TEMPLATES = {
+    "wolf": {"model": "wolf", "height": 1.0, "hp": 22, "atk": 6, "dfn": 1,
+             "speed": 3.6, "xp": 14, "aggro": 9.0, "reach": 1.3, "dmg": 7,
+             "home_r": 16.0, "drops": {"pelt": 0.8, "gold": 0.5},
+             "name": "Grey Wolf", "windup": 0.4, "cd": 1.1},
+    "bandit": {"model": "bandit", "height": 1.85, "hp": 30, "atk": 8,
+               "dfn": 2, "speed": 3.2, "xp": 22, "aggro": 11.0, "reach": 1.5,
+               "dmg": 9, "home_r": 14.0,
+               "drops": {"gold": 0.9, "potion": 0.25}, "name": "Road Bandit",
+               "windup": 0.5, "cd": 1.25},
+    "skeleton": {"model": "skeleton", "height": 1.9, "hp": 26, "atk": 7,
+                 "dfn": 1, "speed": 2.9, "xp": 18, "aggro": 10.0,
+                 "reach": 1.5, "dmg": 8, "home_r": 12.0,
+                 "drops": {"bone": 0.9, "gold": 0.6},
+                 "name": "Restless Bones", "windup": 0.55, "cd": 1.15},
+}
 
 
 class World:
@@ -37,6 +58,8 @@ class World:
         self.player = None
         self.quest = "none"
         self.time = 0.0
+        self.weather = "clear"
+        self.weather_left = 110.0 + seed % 70
         self.day_t = 0.20
         self.messages = []
         self.damage_numbers = []
@@ -44,6 +67,7 @@ class World:
         self.kills = set()
         self.collected = set()
         self.opened_chests = set()
+        self.respawn = []
         self.victory_shown = False
         self.deaths = 0
         self._eid = 0
@@ -88,6 +112,22 @@ class World:
                     return nx, nz
         return x, z
 
+    def _spawn_hostile(self, kind, x, z, yaw=None):
+        """Spawn a hostile from its canon template at a walkable spot."""
+        t = HOSTILE_TEMPLATES[kind]
+        sx, sz = self._walkable_near(x, z, 8.0)
+        actor = ent.Actor(self._next_eid(), t["model"], sx, sz, t["height"],
+                          kind=kind, hp=t["hp"], atk=t["atk"], dfn=t["dfn"],
+                          speed=t["speed"], xp_reward=t["xp"],
+                          aggro_r=t["aggro"], attack_range=t["reach"],
+                          attack_dmg=t["dmg"], home_r=t["home_r"],
+                          drops=dict(t["drops"]), name=t["name"],
+                          windup_s=t["windup"], cd_base=t["cd"])
+        if yaw is not None:
+            actor.yaw = yaw
+        self._add(actor)
+        return actor
+
     def _add(self, entity):
         entity.ground_y = self.terrain.height(entity.x, entity.z)
         self.entities.append(entity)
@@ -102,7 +142,7 @@ class World:
         houses = (
             ("house0", 10, -7, -0.35), ("house1", -9, 4, 0.25),
             ("house2", 11, 7, -0.2), ("house0", -6, -13, 0.15),
-            ("house1", 3, 13, 0.05),
+            ("house1", 9, 17, 0.05),
         )
         for model, dx, dz, yaw in houses:
             hx, hz = self._walkable_near(vx + dx, vz + dz, 10.0)
@@ -170,6 +210,10 @@ class World:
                               name=guard_spec["name"])
             guard.yaw = 0.0
             self._add(guard)
+        for sx in (-1, 1):
+            self._add(ent.Prop(self._next_eid(), "torch",
+                               kx + sx * 2.7, kz + 12.1, 2.6,
+                               solid=True, radius=0.35, name="Gate Torch"))
         for sx, sz in ((-1, 1), (1, 1)):
             b = ent.Prop(self._next_eid(), "banner0",
                          kx + sx * 11.0, kz + sz * 11.0, 2.35)
@@ -235,30 +279,34 @@ class World:
                                scale=0.8 + rng.random() * 0.4, solid=True,
                                radius=0.5))
             placed += 1
+        px, pz = self.player.x, self.player.z
         for i in range(6):
+            best = None
             for _ in range(10):
                 wx = cx + (rng.random() - 0.5) * 70.0
                 wz = cz + (rng.random() - 0.5) * 70.0
-                if ter.forest_at(wx, wz) and ter.walkable(wx, wz):
-                    wolf = ent.Actor(self._next_eid(), "wolf", wx, wz, 1.0,
-                                     kind="wolf", hp=22, atk=6, dfn=1,
-                                     speed=3.6, xp_reward=14, aggro_r=9.0,
-                                     attack_range=1.3, attack_dmg=7,
-                                     home_r=16.0,
-                                     drops={"pelt": 0.8, "gold": 0.5},
-                                     name="Grey Wolf")
-                    self._add(wolf)
+                if not (ter.forest_at(wx, wz) and ter.walkable(wx, wz)):
+                    continue
+                d = math.hypot(wx - px, wz - pz)
+                if best is None or d > best[0]:
+                    best = (d, wx, wz)
+                if d >= SANCTUARY_R:
                     break
+            if best is not None:
+                self._spawn_hostile("wolf", best[1], best[2])
         midx, midz = (vx + cx) * 0.5, (vz + cz) * 0.5
         for i in range(4):
-            bx, bz = self._walkable_near(midx + (rng.random() - 0.5) * 26,
-                                         midz + (rng.random() - 0.5) * 26)
-            self._add(ent.Actor(self._next_eid(), "bandit", bx, bz, 1.85,
-                                kind="bandit", hp=30, atk=8, dfn=2, speed=3.2,
-                                xp_reward=22, aggro_r=11.0, attack_range=1.5,
-                                attack_dmg=9, home_r=14.0,
-                                drops={"gold": 0.9, "potion": 0.25},
-                                name="Road Bandit"))
+            best = None
+            for _ in range(10):
+                bx, bz = self._walkable_near(
+                    midx + (rng.random() - 0.5) * 26,
+                    midz + (rng.random() - 0.5) * 26)
+                d = math.hypot(bx - px, bz - pz)
+                if best is None or d > best[0]:
+                    best = (d, bx, bz)
+                if d >= SANCTUARY_R:
+                    break
+            self._spawn_hostile("bandit", best[1], best[2])
 
     def _spawn_camp(self, cx, cz):
         rng = self.rng
@@ -266,21 +314,14 @@ class World:
                            name="Dead Fire"))
         for i in range(7):
             ang = i * 0.897 + 0.4
-            sx, sz = self._walkable_near(cx + math.cos(ang) * 7.5,
-                                         cz + math.sin(ang) * 7.5, 6.0)
-            skel = ent.Actor(self._next_eid(), "skeleton", sx, sz, 1.9,
-                             kind="skeleton", hp=26, atk=7, dfn=1, speed=2.9,
-                             xp_reward=18, aggro_r=10.0, attack_range=1.5,
-                             attack_dmg=8, home_r=12.0,
-                             drops={"bone": 0.9, "gold": 0.6},
-                             name="Restless Bones")
-            skel.yaw = ang + math.pi
-            self._add(skel)
+            self._spawn_hostile("skeleton", cx + math.cos(ang) * 7.5,
+                                cz + math.sin(ang) * 7.5, yaw=ang + math.pi)
         captain = ent.Actor(self._next_eid(), "captain", cx, cz - 3.5, 2.6,
                             kind="captain", hp=110, atk=13, dfn=4, speed=2.6,
-                            xp_reward=120, aggro_r=13.0, attack_range=2.0,
-                            attack_dmg=13, home_r=10.0, scale=1.0,
-                            drops={"gold": 1.0}, name="The Bone Captain")
+                            xp_reward=160, aggro_r=13.0, attack_range=2.2,
+                            attack_dmg=15, home_r=10.0, scale=1.0,
+                            drops={"gold": 1.0}, name="The Bone Captain",
+                            windup_s=0.75, cd_base=1.6)
         captain.yaw = math.pi
         self._add(captain)
         chest = ent.Chest(self._next_eid(), cx + 4.5, cz + 3.0,
@@ -290,12 +331,44 @@ class World:
             self._add(ent.Pickup(self._next_eid(), "potion", 1,
                                  cx + dx, cz + dz, 0.4))
 
+    def set_weather(self, name):
+        """Force a weather state for play, scenes or tests."""
+        if name not in ("clear", "rain", "snow"):
+            raise ValueError("unknown weather: %s" % name)
+        self.weather = name
+        self.weather_left = 60.0 if name != "clear" else 110.0
+
+    def _advance_weather(self):
+        """Deterministic clear/precipitation cycle, independent of gameplay RNG."""
+        roll = (self.seed * 1103515245 +
+                int(self.time * 13.0) * 12345) & 0x7FFFFFFF
+        if self.weather == "clear":
+            self.weather = "snow" if roll % 5 == 0 else "rain"
+            self.weather_left = 45.0 + roll % 50
+            self.add_message(
+                "Snow begins to fall." if self.weather == "snow"
+                else "Rain sweeps across the vale.", WEATHER_COLOR)
+        else:
+            self.weather = "clear"
+            self.weather_left = 100.0 + roll % 80
+            self.add_message("The sky clears.", WEATHER_COLOR)
+
     def update(self, dt, env):
-        """Advance the world clock, every actor and transient state."""
+        """Advance the world clock, weather, every actor and transient state."""
         self.time += dt
+        self.weather_left -= dt
+        if self.weather_left <= 0.0:
+            self._advance_weather()
         self.day_t = (0.20 + self.time / self.day_length) % 1.0
         player = self.player
         player.anim_t += dt
+        if player.heal_remaining > 0.0:
+            step = min(player.heal_remaining, 24.0 * dt)
+            player.heal_remaining -= step
+            if player.hp < player.max_hp:
+                player.hp = min(player.max_hp, player.hp + step)
+            else:
+                player.heal_remaining = 0.0
         player.flash = max(0.0, player.flash - dt * 3.5)
         player.hurt_t = max(0.0, player.hurt_t - dt)
         player.shrine_cd = max(0.0, player.shrine_cd - dt)
@@ -335,7 +408,7 @@ class World:
             elif isinstance(e, ent.Chest):
                 if e.opened:
                     e.model = "chest_o"
-            if e.model == "campfire":
+            if e.model in ("campfire", "torch"):
                 e.pose = "fire%d" % ((fire_idx + ent.eid_hash(e.eid)) % 4)
             elif e.model.startswith("tree_") and e.model != "tree_dead":
                 e.pose = "sway%d" % ((sway + ent.eid_hash(e.eid)) % 2)
@@ -346,6 +419,7 @@ class World:
                          and not (getattr(e, "dead", False)
                                   and getattr(e, "dead_t", 0.0) > 6.0
                                   and e is not player)]
+        self._tick_respawns(dt)
         for m in self.messages:
             m[2] += dt
         self.messages = [m for m in self.messages if m[2] < 7.0][-6:]
@@ -353,6 +427,33 @@ class World:
             d["t"] += dt
             d["y"] += dt * 1.2
         self.damage_numbers = [d for d in self.damage_numbers if d["t"] < 1.0]
+
+    def _tick_respawns(self, dt):
+        """Return killed hostiles to their camps once the player is far away."""
+        if not self.respawn:
+            return
+        player = self.player
+        keep = []
+        for r in self.respawn:
+            r["t"] -= dt
+            if r["t"] > 0.0:
+                keep.append(r)
+                continue
+            if math.hypot(r["x"] - player.x, r["z"] - player.z) < 45.0:
+                keep.append(r)
+                continue
+            busy = False
+            for e in self.entities:
+                if (getattr(e, "kind", "") == r["kind"]
+                        and not getattr(e, "dead", False)
+                        and math.hypot(e.x - r["x"], e.z - r["z"]) < 3.0):
+                    busy = True
+                    break
+            if busy:
+                keep.append(r)
+                continue
+            self._spawn_hostile(r["kind"], r["x"], r["z"])
+        self.respawn = keep
 
     def add_message(self, text, color=INFO_COLOR):
         self.messages.append([text, color, 0.0])
@@ -381,12 +482,20 @@ class World:
             if dot < 0.42:
                 continue
             dmg = damage_roll(atk, e.dfn, self.rng)
+            tox = player.x - e.x
+            toz = player.z - e.z
+            td = math.hypot(tox, toz) or 1.0
+            behind = (tox * math.sin(e.yaw)
+                      + toz * math.cos(e.yaw)) / td < -0.35
+            if behind:
+                dmg = int(dmg * 1.5)
             e.hp -= dmg
             e.flash = 1.0
             e.flash_color = (0.7, pack_rgb(255, 230, 230))
             hit_any = True
             self.add_damage_number(e.x, e.z, e.ground_y + e.height * 0.8,
-                                   str(dmg), pack_rgb(255, 220, 160))
+                                   str(dmg),
+                                   QUEST_COLOR if behind else FOE_COLOR)
             if e.state in ("idle", "wander", "return"):
                 e.state = "chase"
             nx = e.x + fx * 0.7
@@ -423,6 +532,9 @@ class World:
                     self._add_drop(ent.Pickup(self._next_eid(), item_id, 1,
                                               actor.x + 0.4, actor.z + 0.3,
                                               0.35))
+        if actor.kind in HOSTILE_TEMPLATES:
+            self.respawn.append({"kind": actor.kind, "x": actor.home_x,
+                                 "z": actor.home_z, "t": 180.0})
         if actor.kind == "captain":
             self._add_drop(ent.Pickup(self._next_eid(), "amulet", 1,
                                       actor.x, actor.z, 0.45, quest=True))
@@ -452,6 +564,23 @@ class World:
             return
         total = damage_roll(dmg, player.inventory.total_dfn(player.dfn),
                             self.rng)
+        if player.guarding and player.stamina >= 8.0:
+            total = max(1, int(total * 0.3))
+            player.stamina = max(0.0, player.stamina - 10.0)
+            if player.stamina <= 0.0:
+                player.guarding = False
+            player.hurt_t = 0.18
+            player.hp -= total
+            self.add_damage_number(player.x, player.z,
+                                   player.ground_y + 2.0, "-%d" % total,
+                                   BLOCK_COLOR)
+            if player.hp <= 0:
+                player.hp = 0
+                player.state = "dead"
+                self.deaths += 1
+                self.add_message("You fall beneath %s's blow..." %
+                                 (attacker.name or "the foe"), HURT_COLOR)
+            return
         player.hp -= total
         player.hurt_t = 0.4
         player.flash = 1.0
@@ -593,14 +722,24 @@ class World:
             self.add_message("Bought %s." % item.name, INFO_COLOR)
         return True
 
+    def sellables(self):
+        """Items Bram will buy, as (item_id, count) pairs."""
+        return [(iid, n) for iid, n in
+                sorted(self.player.inventory.counts.items())
+                if iid in ITEMS and iid != "amulet" and n > 0
+                and ITEMS[iid].price > 0]
+
     def sell(self, item_id):
         player = self.player
+        item = ITEMS.get(item_id)
+        if item is None or item.price <= 0 or item_id == "amulet":
+            return False
         if player.inventory.count(item_id) <= 0:
             return False
         player.inventory.remove(item_id, 1)
-        price = max(1, ITEMS[item_id].price // 2)
+        price = max(1, item.price // 2)
         player.inventory.add("gold", price)
-        self.add_message("Sold %s for %d gold." % (ITEMS[item_id].name, price),
+        self.add_message("Sold %s for %d gold." % (item.name, price),
                          GOLD_COLOR)
         return True
 
@@ -620,6 +759,8 @@ class World:
             "collected": sorted(self.collected),
             "opened_chests": sorted(self.opened_chests),
             "deaths": self.deaths,
+            "weather": self.weather,
+            "weather_left": self.weather_left,
             "player": {
                 "x": p.x, "z": p.z, "yaw": p.yaw, "hp": p.hp,
                 "max_hp": p.max_hp, "atk": p.atk, "dfn": p.dfn,
@@ -651,6 +792,10 @@ class World:
         world.collected = set(data["collected"])
         world.opened_chests = set(data["opened_chests"])
         world.deaths = data.get("deaths", 0)
+        world.weather = data.get("weather", "clear")
+        world.weather_left = data.get("weather_left", world.weather_left)
+        if world.weather not in ("clear", "rain", "snow"):
+            world.weather = "clear"
         pd = data["player"]
         p = world.player
         p.x, p.z, p.yaw = pd["x"], pd["z"], pd["yaw"]

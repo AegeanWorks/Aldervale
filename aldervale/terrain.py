@@ -13,6 +13,13 @@ from .noise import fbm, rand01
 
 SUN = (0.42, 0.78, 0.46)
 
+M_SAND = 0
+M_GRASS = 1
+M_FOREST = 2
+M_DIRT = 3
+M_ROCK = 4
+M_SNOW = 5
+
 _DEEP = pack_rgb(24, 46, 74)
 _SAND = pack_rgb(196, 178, 128)
 _GRASS1 = pack_rgb(88, 128, 60)
@@ -55,6 +62,8 @@ class Terrain:
         self.heights = []
         self.colors = []
         self.lights = []
+        self.materials = []
+        self.texture = []
         self.path_mask = bytearray(size * size)
         self._generate(octaves, half)
 
@@ -167,6 +176,8 @@ class Terrain:
             hdn = self.heights[z + 1] if z < W - 1 else hrow
             crow = array("i", bytes(4 * W))
             lrow = array("B", bytes(W))
+            mrow = array("B", bytes(W))
+            trow = array("B", bytes(W))
             for x in range(W):
                 h = hrow[x]
                 hl = hup[x] if z > 0 else h
@@ -183,17 +194,23 @@ class Terrain:
                 fo = forest[(z // gres) * (W // gres + 1) + x // gres]
                 if h <= water + 0.75:
                     c = _SAND
+                    mat = M_SAND
                 else:
                     c = _GRASS1 if gm > 0.5 else _GRASS2
+                    mat = M_GRASS
                     if fo > 0.60 and x > W * 0.35:
                         c = _FOREST
+                        mat = M_FOREST
                     if h > 15.0:
                         t = min(1.0, (h - 15.0) / 5.0)
                         c = _lerp_packed(c, _SNOW, t)
+                        mat = M_SNOW
                     if nl > 2.1:
                         c = _ROCK if gm > 0.5 else _ROCK_D
+                        mat = M_ROCK
                 if path[z * W + x]:
                     c = _DIRT
+                    mat = M_DIRT
                 rv = rand01(x, z, self.seed + 77)
                 if rv < 0.004 and c in (_GRASS1, _GRASS2):
                     c = _FLOWERS[int(rand01(x, z, self.seed + 91) * 3.999)]
@@ -204,8 +221,14 @@ class Terrain:
                     min(255, (c & 255) * k),
                 )
                 lrow[x] = max(0, min(255, int(light * 255)))
+                mrow[x] = mat
+                tv = (fbm(x * 0.11, z * 0.11, self.seed + 201, 2) * 0.7
+                      + fbm(x * 0.42, z * 0.42, self.seed + 211, 2) * 0.3)
+                trow[x] = int(tv * 255)
             self.colors.append(crow)
             self.lights.append(lrow)
+            self.materials.append(mrow)
+            self.texture.append(trow)
         self._smooth_lights()
 
 
@@ -249,6 +272,18 @@ class Terrain:
         if 0 <= ix < self.W and 0 <= iz < self.W:
             return self.lights[iz][ix] / 255.0
         return 0.5
+
+    def material(self, x, z):
+        ix, iz = int(x), int(z)
+        if 0 <= ix < self.W and 0 <= iz < self.W:
+            return self.materials[iz][ix]
+        return M_GRASS
+
+    def texture_at(self, x, z):
+        ix, iz = int(x), int(z)
+        if 0 <= ix < self.W and 0 <= iz < self.W:
+            return self.texture[iz][ix]
+        return 128
 
     def is_path(self, x, z):
         ix, iz = int(x), int(z)

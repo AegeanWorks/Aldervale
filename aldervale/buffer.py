@@ -7,7 +7,7 @@ the cells that changed since the previous frame.
 
 FAR = 1.0e9
 NEAREST = -1.0
-RAMP = " .,:;-=+*#%@"
+RAMP = " .,'`:;~-=+x*#%&8@$"
 _RAMP_INDEX = {ch: i for i, ch in enumerate(RAMP)}
 
 
@@ -100,8 +100,8 @@ class Screen:
     def text_centered(self, y, s, color):
         self.text((self.w - len(s)) // 2, y, s, color)
 
-    def box(self, x, y, w, h, color, fill=" "):
-        if fill != " ":
+    def box(self, x, y, w, h, color, fill=None):
+        if fill is not None:
             for yy in range(y, y + h):
                 for xx in range(x, x + w):
                     self.set(xx, yy, fill, color)
@@ -172,21 +172,26 @@ class Screen:
                             chars4.append(cr[sx2])
                     if not levs:
                         continue
-                    if len(levs) == 4:
-                        mean = (levs[0] + levs[1] + levs[2] + levs[3]) * 0.25
-                        ch = RAMP[int(mean + 0.5)]
-                        best = 0
-                        for i in range(1, 4):
-                            if levs[i] > levs[best]:
-                                best = i
-                        c = cols[best]
-                    else:
-                        best = 0
-                        for i in range(1, len(levs)):
-                            if levs[i] > levs[best]:
-                                best = i
-                        ch = chars4[best]
-                        c = cols[best]
+                    mean_fill = sum(levs) / len(levs)
+                    level = int(mean_fill + 0.5)
+                    if level < 1:
+                        continue
+                    if level >= len(RAMP):
+                        level = len(RAMP) - 1
+                    pick = 0
+                    contrast = -1.0
+                    nearest = 0
+                    nearest_d = 999.0
+                    for i, lv in enumerate(levs):
+                        d = abs(lv - mean_fill)
+                        if d > contrast:
+                            contrast = d
+                            pick = i
+                        if d < nearest_d:
+                            nearest_d = d
+                            nearest = i
+                    ch = RAMP[level]
+                    c = cols[pick] if contrast >= 3.0 else cols[nearest]
                 else:
                     ch = srow[sx]
                     if ch == " ":

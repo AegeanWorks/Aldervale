@@ -31,6 +31,33 @@ def _build_parser():
                     help="render in monochrome ramp only")
     ap.add_argument("--screenshot", metavar="PATH",
                     help="render one vista frame to a text file and exit")
+    ap.add_argument("--inspect", metavar="DIR",
+                    help="write scene PNGs and a control-probe report to DIR "
+                         "and exit")
+    ap.add_argument("--inspect-scale", type=int, default=2, metavar="N",
+                    help="pixels per glyph pixel in inspection PNGs "
+                         "(default 2)")
+    ap.add_argument("--web-shot", metavar="PATH",
+                    help="screenshot the web studio with headless Edge/Chrome "
+                         "and exit")
+    ap.add_argument("--web-dir", default=".inspect", metavar="DIR",
+                    help="studio directory containing index.html "
+                         "(default .inspect)")
+    ap.add_argument("--web-query", default="", metavar="QUERY",
+                    help="studio query string, e.g. "
+                         "\"tab=models&model=knight&pose=idle&yaw=0&scale=4&shot=1\"")
+    ap.add_argument("--web-size", default="1600x1000", metavar="WxH",
+                    help="headless browser window size (default 1600x1000)")
+    ap.add_argument("--serve", nargs="?", const=8765, type=int, metavar="PORT",
+                    help="serve the localhost web launcher and Studio "
+                         "(default port 8765)")
+    ap.add_argument("--open", action="store_true",
+                    help="open the launcher page in the default browser")
+    ap.add_argument("--autostart", action="store_true",
+                    help="start the game as soon as the launcher page loads "
+                         "(with --serve)")
+    ap.add_argument("--open-play", action="store_true",
+                    help="open the browser-play page directly (with --serve)")
     ap.add_argument("--save", default="saves/aldervale.json", metavar="PATH",
                     help="save slot path (default saves/aldervale.json)")
     ap.add_argument("--version", action="version",
@@ -61,6 +88,59 @@ def run(argv=None):
         return _fail("--height must be between 20 and 110.",
                      "The renderer is sized in character cells.",
                      "Retry with a value in range, e.g. --height 90.")
+    if not 1 <= args.inspect_scale <= 6:
+        return _fail("--inspect-scale must be between 1 and 6.",
+                     "Each glyph pixel is enlarged by this factor.",
+                     "Retry with e.g. --inspect-scale 2.")
+    if args.open and args.serve is None:
+        return _fail("--open needs --serve.",
+                     "The browser URL is only created by the launcher.",
+                     "Retry with `python -m aldervale --serve --open`.")
+    if args.autostart and args.serve is None:
+        return _fail("--autostart needs --serve.",
+                     "Autostart is a launcher-page behaviour.",
+                     "Retry with `python -m aldervale --serve --open "
+                     "--autostart`.")
+    if args.open_play and args.serve is None:
+        return _fail("--open-play needs --serve.",
+                     "The browser game URL is only created by the launcher.",
+                     "Retry with `python -m aldervale --serve --open-play`.")
+    if args.open_play and args.autostart:
+        return _fail("--open-play and --autostart are different targets.",
+                     "One opens the browser game, the other starts the "
+                     "terminal game from the launcher page.",
+                     "Use --open-play for the browser, or --autostart alone "
+                     "for the native launch page.")
+    if args.serve is not None:
+        if args.serve != 0 and not 1024 <= args.serve <= 65535:
+            return _fail("--serve PORT must be 0 or 1024..65535.",
+                         "Ports below 1024 are privileged and 65535 is the "
+                         "maximum.",
+                         "Retry with e.g. --serve 8765.")
+        from .launcher import serve
+        try:
+            return serve(args.serve, args.open or args.open_play,
+                         args.autostart, args.open_play)
+        except OSError as exc:
+            return _fail("Cannot start the web launcher: %s" % exc,
+                         "The port is busy or the launcher could not bind "
+                         "localhost.",
+                         "Use another port, e.g. --serve 8766, or stop the "
+                         "process using this one.")
+    if args.web_shot:
+        return _web_shot(args)
+    if args.inspect:
+        from .inspect import format_summary, run_inspection
+        report = run_inspection(args.inspect, seed=args.seed,
+                                width=args.width or 132,
+                                height=args.height or 60,
+                                scale=args.inspect_scale)
+        print(format_summary(report))
+        if report.get("studio"):
+            import os
+            print("studio: %s" % os.path.join(args.inspect,
+                                              report["studio"]))
+        return 1 if report["failed"] else 0
     from .game import Game
     game = Game(seed=args.seed, width=args.width, height=args.height,
                 fps=args.fps, color=not args.no_color,
@@ -81,6 +161,45 @@ def run(argv=None):
                      "An unexpected error occurred inside the engine.",
                      "Report the message above with your terminal and "
                      "Python version.")
+
+
+def _web_shot(args):
+    from pathlib import Path
+
+    from .studio import find_browser, screenshot_studio
+
+    html = Path(args.web_dir) / "index.html"
+    if not html.is_file():
+        return _fail("Studio page not found at %s." % html,
+                     "The web shot needs the page written by a prior "
+                     "--inspect run.",
+                     "Run `python -m aldervale --inspect %s` first."
+                     % args.web_dir)
+    text = args.web_size.lower().replace(",", "x")
+    try:
+        width, height = (int(v) for v in text.split("x", 1))
+    except ValueError:
+        return _fail("--web-size must look like WxH.",
+                     "The headless browser needs a pixel viewport.",
+                     "Retry with e.g. --web-size 1600x1000.")
+    if not (320 <= width <= 4000 and 240 <= height <= 4000):
+        return _fail("--web-size is outside 320x240..4000x4000.",
+                     "Very small or huge captures are not useful.",
+                     "Retry with e.g. --web-size 1600x1000.")
+    if find_browser() is None:
+        return _fail("No Edge/Chrome browser was found.",
+                     "Headless screenshots need a Chromium-family browser.",
+                     "Install Edge or Chrome, set ALDERVALE_BROWSER to its "
+                     "path, or open %s manually." % html)
+    ok, detail = screenshot_studio(html, args.web_shot, args.web_query,
+                                   (width, height))
+    if not ok:
+        return _fail("Headless screenshot failed: %s" % detail,
+                     "The browser did not produce a usable image.",
+                     "Retry, or open %s in a browser and capture it manually."
+                     % html)
+    print("wrote %s" % detail)
+    return 0
 
 
 def _play(game, demo=None):

@@ -86,11 +86,21 @@ def knight(pose=None, palette=None):
         b.box(0.13 * side, 0.47, 0.10, 0.14, 0.10, 0.07, pal["steel"], rx=ang * 1.12, pivot=hip)
         b.box(0.13 * side, 0.07, 0.10, 0.17, 0.14, 0.30, pal["leather"], rx=ang * 1.12, pivot=hip)
         b.box(0.13 * side, 0.10, 0.24, 0.14, 0.05, 0.06, pal["steel_d"], rx=ang * 1.12, pivot=hip)
+        b.box(0.13 * side, 0.055, 0.27, 0.16, 0.09, 0.10, pal["steel_d"], rx=ang * 1.12, pivot=hip)
+        b.box(0.13 * side, 0.045, -0.06, 0.17, 0.08, 0.10, LEATHER_D, rx=ang * 1.12, pivot=hip)
     lp = (0.0, 0.9, 0.0)
 
     def part(cx, cy, cz, sx, sy, sz, color, ry=0.0, rx=0.0, rz=0.0, emissive=False):
         b.box(cx, cy, cz, sx, sy, sz, color, ry=ry, rx=rx + lean, rz=rz,
               pivot=lp, emissive=emissive)
+
+    def ball(cx, cy, cz, rx, ry, rz, color, seg=8, rings=5):
+        px, py, pz = cx, cy, cz
+        if lean:
+            d = m3.mat_vec(m3.rot_x_matrix(lean),
+                           (px - lp[0], py - lp[1], pz - lp[2]))
+            px, py, pz = lp[0] + d[0], lp[1] + d[1], lp[2] + d[2]
+        b.sphere(px, py, pz, rx, ry, rz, seg=seg, rings=rings, color=color)
 
     part(0.0, 0.92, 0.0, 0.50, 0.10, 0.31, pal["leather"])
     part(0.0, 0.92, 0.158, 0.10, 0.06, 0.02, pal["gold"])
@@ -103,44 +113,68 @@ def knight(pose=None, palette=None):
     part(-0.075, 1.24, 0.162, 0.05, 0.035, 0.02, pal["gold"])
     part(0.075, 1.24, 0.162, 0.05, 0.035, 0.02, pal["gold"])
     part(0.0, 1.17, -0.158, 0.34, 0.50, 0.02, pal["trim_d"])
-    part(-0.32, 1.41, 0.0, 0.22, 0.16, 0.27, pal["steel_d"], ry=0.16)
-    part(0.32, 1.41, 0.0, 0.22, 0.16, 0.27, pal["steel_d"], ry=-0.16)
     part(-0.34, 1.33, 0.0, 0.20, 0.09, 0.23, pal["steel"], ry=0.16)
     part(0.34, 1.33, 0.0, 0.20, 0.09, 0.23, pal["steel"], ry=-0.16)
     part(0.0, 1.45, 0.0, 0.30, 0.06, 0.24, pal["steel_d"])
     part(0.0, 1.18, -0.163, 0.04, 0.46, 0.02, pal["steel"])
+    part(0.0, 1.10, -0.235, 0.58, 0.58, 0.05, pal["trim_d"])
+    part(0.0, 0.62, -0.278, 0.50, 0.40, 0.05, pal["trim_d"], rx=0.12)
+    for fx in (-0.18, 0.0, 0.18):
+        part(fx, 1.06, -0.266, 0.028, 0.70, 0.02, pal["trim"])
+    part(0.0, 1.39, -0.19, 0.30, 0.06, 0.05, pal["gold"])
     arm_l = p["arm_l"]
     arm_r = p["arm_r"]
     for side, ang in ((-1.0, arm_l), (1.0, arm_r)):
         sh = (0.33 * side, 1.36, 0.0)
         b.box(0.35 * side, 1.18, 0.0, 0.14, 0.36, 0.16, pal["steel_d"], rx=ang, pivot=sh)
         b.box(0.36 * side, 0.95, 0.01, 0.15, 0.32, 0.17, pal["steel"], rx=ang * 1.15, pivot=sh)
-    part(0.0, 1.56, 0.01, 0.27, 0.27, 0.27, pal["steel"])
+        b.box(0.37 * side, 0.77, 0.02, 0.16, 0.15, 0.19, pal["steel_d"], rx=ang * 1.15, pivot=sh)
+        b.box(0.37 * side, 0.71, 0.02, 0.13, 0.05, 0.16, pal["leather"], rx=ang * 1.15, pivot=sh)
+    ball(0.0, 1.56, 0.01, 0.145, 0.145, 0.14, pal["steel"])
+    ball(0.0, 1.45, 0.01, 0.10, 0.06, 0.10, pal["steel_d"], seg=6, rings=3)
+    ball(-0.33, 1.41, 0.0, 0.16, 0.12, 0.18, pal["steel_d"], seg=7, rings=4)
+    ball(0.33, 1.41, 0.0, 0.16, 0.12, 0.18, pal["steel_d"], seg=7, rings=4)
+    part(0.0, 1.635, 0.145, 0.28, 0.035, 0.03, pal["gold"])
     part(0.0, 1.57, 0.147, 0.19, 0.05, 0.01, EYE_DARK)
     part(0.0, 1.52, 0.148, 0.03, 0.10, 0.012, EYE_DARK)
+    part(0.0, 1.60, 0.152, 0.03, 0.16, 0.02, pal["gold"])
+    for sx in (-1.0, 1.0):
+        part(sx * 0.145, 1.53, 0.07, 0.035, 0.18, 0.17, pal["steel_d"])
     part(-0.13, 1.60, 0.14, 0.03, 0.03, 0.01, pal["steel_d"])
     part(0.13, 1.60, 0.14, 0.03, 0.03, 0.01, pal["steel_d"])
     part(0.0, 1.75, 0.0, 0.05, 0.14, 0.31, pal["plume"])
     part(0.0, 1.81, -0.11, 0.05, 0.20, 0.16, pal["plume"], rz=-0.25)
-    sw = _sword(pal)
-    hand = m3.add((0.34, 1.36, 0.0), m3.mat_vec(m3.rot_x_matrix(arm_r), (0.0, -0.44, 0.04)))
+    sw = _sword(pal, blade_len=0.78, blade_w=0.09)
+    hand = m3.add((0.34, 1.36, 0.0), m3.mat_vec(m3.rot_x_matrix(arm_r), (0.0, -0.59, 0.03)))
     b.merge(sw, matrix=m3.rot_x_matrix(arm_r + p["sword"]), offset=hand)
     shl = (0.33, 1.36, 0.0)
-    b.box(-0.45, 1.14, 0.05, 0.06, 0.52, 0.42, pal["trim_d"], ry=0.12,
+    b.box(-0.56, 1.14, 0.05, 0.06, 0.52, 0.42, pal["trim_d"], ry=0.24,
           rx=arm_l * 0.6, pivot=shl)
-    b.box(-0.485, 1.14, 0.05, 0.012, 0.38, 0.10, pal["gold"], ry=0.12,
+    b.box(-0.597, 1.14, 0.05, 0.014, 0.40, 0.30, pal["trim"], ry=0.24,
           rx=arm_l * 0.6, pivot=shl)
-    b.box(-0.485, 1.22, 0.05, 0.012, 0.10, 0.30, pal["gold"], ry=0.12,
+    b.box(-0.606, 1.14, 0.05, 0.02, 0.14, 0.14, pal["gold"], ry=0.24,
           rx=arm_l * 0.6, pivot=shl)
-    b.box(-0.482, 1.37, 0.05, 0.012, 0.06, 0.42, pal["gold"], ry=0.12,
+    b.box(-0.602, 1.14, 0.05, 0.012, 0.24, 0.09, pal["gold"], ry=0.24,
+          rz=0.55, rx=arm_l * 0.6, pivot=shl)
+    b.box(-0.595, 1.14, 0.05, 0.012, 0.38, 0.10, pal["gold"], ry=0.24,
           rx=arm_l * 0.6, pivot=shl)
-    b.box(-0.482, 0.91, 0.05, 0.012, 0.06, 0.42, pal["gold"], ry=0.12,
+    b.box(-0.595, 1.22, 0.05, 0.012, 0.10, 0.30, pal["gold"], ry=0.24,
           rx=arm_l * 0.6, pivot=shl)
-    b.box(-0.482, 1.14, -0.14, 0.012, 0.52, 0.06, pal["gold"], ry=0.12,
+    b.box(-0.592, 1.37, 0.05, 0.012, 0.06, 0.42, pal["gold"], ry=0.24,
           rx=arm_l * 0.6, pivot=shl)
-    b.box(-0.482, 1.14, 0.24, 0.012, 0.52, 0.06, pal["gold"], ry=0.12,
+    b.box(-0.592, 0.91, 0.05, 0.012, 0.06, 0.42, pal["gold"], ry=0.24,
           rx=arm_l * 0.6, pivot=shl)
-    b.box(-0.495, 1.14, 0.05, 0.02, 0.10, 0.10, pal["gold"], ry=0.12,
+    b.box(-0.592, 1.14, -0.14, 0.012, 0.52, 0.06, pal["gold"], ry=0.24,
+          rx=arm_l * 0.6, pivot=shl)
+    b.box(-0.592, 1.14, 0.24, 0.012, 0.52, 0.06, pal["gold"], ry=0.24,
+          rx=arm_l * 0.6, pivot=shl)
+    b.box(-0.605, 1.14, 0.05, 0.02, 0.10, 0.10, pal["gold"], ry=0.24,
+          rx=arm_l * 0.6, pivot=shl)
+    for sy in (0.92, 1.36):
+        for sz in (-0.10, 0.20):
+            b.box(-0.602, sy, sz, 0.02, 0.05, 0.05, pal["gold"], ry=0.24,
+                  rx=arm_l * 0.6, pivot=shl)
+    b.box(-0.47, 1.19, 0.03, 0.12, 0.08, 0.17, pal["leather"],
           rx=arm_l * 0.6, pivot=shl)
     if p["dead"] > 0.0:
         return _dead_wrap(b).build()
@@ -155,8 +189,15 @@ def _sword(pal, blade_len=0.95, blade_w=0.10, blade=None):
     s.box(0.0, 0.08 + blade_len * 0.5, 0.0, 0.045, blade_len, blade_w,
           blade if blade is not None else pal.get("blade",
                                                   pal.get("steel", STEEL)))
+    s.box(0.0, 0.08 + blade_len * 0.5, 0.0, 0.022, blade_len * 0.9,
+          blade_w * 0.3, C(112, 118, 130))
     s.box(0.026, 0.08 + blade_len * 0.5, 0.0, 0.006, blade_len * 0.96,
           blade_w * 0.55, C(238, 242, 250))
+    s.box(-0.026, 0.08 + blade_len * 0.5, 0.0, 0.006, blade_len * 0.96,
+          blade_w * 0.55, C(228, 234, 244))
+    s.cone(0.0, 0.08 + blade_len, 0.0, 0.034, 0.10, 4,
+           blade if blade is not None else pal.get("blade",
+                                                   pal.get("steel", STEEL)))
     return s.build()
 
 
@@ -192,10 +233,25 @@ def wolf(pose=None):
     def part(cx, cy, cz, sx, sy, sz, color, ry=0.0, rx=0.0):
         b.box(cx, cy, cz, sx, sy, sz, color, ry=ry, rx=rx + body_rx, pivot=bp)
 
-    part(0.0, 0.55, 0.0, 0.30, 0.30, 0.92, GREY_FUR)
-    part(0.0, 0.60, 0.26, 0.32, 0.33, 0.34, GREY_FUR_D)
-    part(0.0, 0.72, -0.05, 0.26, 0.07, 0.72, GREY_FUR_D)
-    part(0.0, 0.67, 0.58, 0.24, 0.22, 0.26, GREY_FUR)
+    def ball(cx, cy, cz, rx, ry, rz, color, seg=8, rings=5):
+        px, py, pz = cx, cy, cz
+        if body_rx:
+            d = m3.mat_vec(m3.rot_x_matrix(body_rx),
+                           (px - bp[0], py - bp[1], pz - bp[2]))
+            px, py, pz = bp[0] + d[0], bp[1] + d[1], bp[2] + d[2]
+        b.sphere(px, py, pz, rx, ry, rz, seg=seg, rings=rings, color=color)
+
+    ball(0.0, 0.55, 0.0, 0.16, 0.16, 0.46, GREY_FUR)
+    ball(0.0, 0.62, 0.31, 0.18, 0.14, 0.17, GREY_FUR_D, seg=6, rings=3)
+    ball(0.0, 0.46, 0.33, 0.13, 0.07, 0.15, C(176, 174, 180), seg=6, rings=3)
+    ball(0.0, 0.62, -0.28, 0.17, 0.14, 0.16, GREY_FUR_D, seg=6, rings=3)
+    part(0.0, 0.72, -0.05, 0.26, 0.07, 0.72, C(74, 72, 80))
+    part(0.0, 0.41, 0.02, 0.20, 0.06, 0.62, C(176, 174, 180))
+    part(0.0, 0.68, 0.46, 0.30, 0.16, 0.14, C(150, 148, 156))
+    for sx in (-1.0, 1.0):
+        part(sx * 0.13, 0.58, 0.32, 0.10, 0.12, 0.12, C(90, 88, 96))
+        part(sx * 0.13, 0.55, -0.32, 0.11, 0.13, 0.13, C(90, 88, 96))
+    ball(0.0, 0.67, 0.58, 0.13, 0.11, 0.14, GREY_FUR)
     part(0.0, 0.62, 0.74, 0.12, 0.11, 0.16, GREY_FUR_D)
     b.box(-0.07, 0.82, 0.50, 0.06, 0.11, 0.05, GREY_FUR_D)
     b.box(0.07, 0.82, 0.50, 0.06, 0.11, 0.05, GREY_FUR_D)
@@ -212,8 +268,12 @@ def wolf(pose=None):
     for x, z, key in ((-0.11, 0.34, "leg_fl"), (0.11, 0.34, "leg_fr"),
                       (-0.11, -0.36, "leg_rl"), (0.11, -0.36, "leg_rr")):
         ang = p[key] * (1.0 - lunge_f) + lunge_f * (1.2 if z > 0 else -1.0)
-        b.box(x, 0.32, z, 0.09, 0.62, 0.11, GREY_FUR_D, rx=ang,
+        b.cylinder(x, 0.02, z, 0.045, 0.61, 6, GREY_FUR_D, rx=ang,
+                   pivot=(x, 0.62, z))
+        b.box(x, 0.14, z, 0.10, 0.10, 0.11, GREY_FUR_D, rx=ang,
               pivot=(x, 0.62, z))
+        b.box(x, 0.035, z + 0.035, 0.10, 0.07, 0.17, C(60, 58, 66),
+              rx=ang, pivot=(x, 0.62, z))
     if p["dead"] > 0.0:
         return _dead_wrap(b, rx=-1.5, dz=-0.2).build()
     return b.build()
@@ -233,24 +293,46 @@ def skeleton(pose=None, captain=False):
         hip = (0.11 * s * side, 0.9 * s, 0.0)
         b.box(0.11 * s * side, 0.46 * s, 0.0, 0.08 * s, 0.88 * s, 0.08 * s,
               BONE, rx=ang, pivot=hip)
+        b.box(0.11 * s * side, 0.035 * s, 0.055 * s, 0.10 * s, 0.06 * s,
+              0.18 * s, BONE_D, rx=ang, pivot=hip)
     lp = (0.0, 0.9 * s, 0.0)
 
     def part(cx, cy, cz, sx, sy, sz, color, ry=0.0, rx=0.0, rz=0.0, emissive=False):
         b.box(cx, cy, cz, sx, sy, sz, color, ry=ry, rx=rx + lean, rz=rz,
               pivot=lp, emissive=emissive)
 
-    part(0.0, 0.94 * s, 0.0, 0.30 * s, 0.14 * s, 0.16 * s, BONE_D)
-    part(0.0, 1.18 * s, 0.0, 0.34 * s, 0.42 * s, 0.20 * s, BONE)
-    for i in range(3):
-        part(0.0, (1.05 + i * 0.11) * s, 0.105 * s, 0.30 * s, 0.035 * s,
-             0.012 * s, BONE_D)
+    def ball(cx, cy, cz, rx, ry, rz, color, seg=7, rings=4):
+        px, py, pz = cx, cy, cz
+        if lean:
+            d = m3.mat_vec(m3.rot_x_matrix(lean),
+                           (px - lp[0], py - lp[1], pz - lp[2]))
+            px, py, pz = lp[0] + d[0], lp[1] + d[1], lp[2] + d[2]
+        b.sphere(px, py, pz, rx, ry, rz, seg=seg, rings=rings, color=color)
+
+    ball(0.0, 0.95 * s, 0.0, 0.17 * s, 0.09 * s, 0.10 * s, BONE_D, seg=6, rings=3)
+    ball(0.0, 1.18 * s, 0.0, 0.14 * s, 0.21 * s, 0.08 * s, C(30, 30, 34), seg=6, rings=3)
+    part(0.0, 1.36 * s, 0.07 * s, 0.38 * s, 0.05 * s, 0.10 * s, BONE_D)
+    part(0.0, 1.18 * s, 0.072 * s, 0.05 * s, 0.42 * s, 0.08 * s, BONE_D)
+    part(0.0, 1.18 * s, -0.075 * s, 0.05 * s, 0.44 * s, 0.04 * s, BONE_D)
+    for i in range(4):
+        ry = (1.00 + i * 0.10) * s
+        part(0.0, ry, 0.068 * s, 0.32 * s, 0.045 * s, 0.10 * s, BONE)
+        part(0.0, ry, -0.068 * s, 0.32 * s, 0.045 * s, 0.09 * s, BONE_D)
+        for sx in (-1.0, 1.0):
+            part(sx * 0.15 * s, ry, 0.0, 0.035 * s, 0.045 * s, 0.16 * s,
+                 BONE_D)
     arm_l = p["arm_l"]
     arm_r = p["arm_r"]
     for side, ang in ((-1.0, arm_l), (1.0, arm_r)):
         sh = (0.22 * s * side, 1.34 * s, 0.0)
         b.box(0.24 * s * side, 1.0 * s, 0.01, 0.07 * s, 0.72 * s, 0.07 * s,
               BONE, rx=ang, pivot=sh)
-    part(0.0, 1.52 * s, 0.01, 0.20 * s, 0.20 * s, 0.20 * s, BONE)
+        for fi in (-1, 0, 1):
+            b.box(0.24 * s * side + fi * 0.028 * s, 0.61 * s,
+                  0.035 * s, 0.02 * s, 0.12 * s, 0.02 * s, BONE,
+                  rx=ang, pivot=sh)
+    ball(0.0, 1.52 * s, 0.01, 0.10 * s, 0.11 * s, 0.10 * s, BONE)
+    part(0.0, 1.42 * s, 0.06 * s, 0.14 * s, 0.05 * s, 0.13 * s, BONE)
     part(0.0, 1.53 * s, 0.106 * s, 0.05 * s, 0.05 * s, 0.01 * s, EYE_DARK)
     part(-0.05 * s, 1.53 * s, 0.106 * s, 0.04 * s, 0.04 * s, 0.01 * s, EYE_DARK)
     part(0.05 * s, 1.53 * s, 0.106 * s, 0.04 * s, 0.04 * s, 0.01 * s, EYE_DARK)
@@ -264,8 +346,23 @@ def skeleton(pose=None, captain=False):
             b.box(hx * s, 1.80 * s, 0.0, 0.03 * s, 0.03 * s, 0.03 * s,
                   C(198, 58, 66), emissive=True)
         part(0.0, 0.92 * s, -0.155 * s, 0.50 * s, 0.05 * s, 0.03 * s, GOLD_D)
-        part(0.0, 1.22 * s, -0.14 * s, 0.5 * s, 0.72 * s, 0.025 * s, DARKRED)
-        part(0.0, 1.5 * s, -0.14 * s, 0.42 * s, 0.14 * s, 0.028 * s, C(70, 18, 22))
+        for i, fx in enumerate((-0.18, -0.06, 0.06, 0.18)):
+            part(fx * s, 1.20 * s, -0.145 * s, 0.11 * s, 0.74 * s,
+                 0.03 * s, DARKRED if i % 2 == 0 else C(118, 32, 38))
+        for fx in (-0.12, 0.0, 0.12):
+            part(fx * s, 1.20 * s, -0.163 * s, 0.025 * s, 0.72 * s,
+                 0.012 * s, C(64, 16, 20))
+        for i, fx in enumerate((-0.18, -0.06, 0.06, 0.18)):
+            part(fx * s, 0.80 * s, -0.145 * s, 0.11 * s, 0.10 * s,
+                 0.035 * s, C(88, 24, 28))
+        part(0.0, 1.58 * s, -0.145 * s, 0.44 * s, 0.09 * s, 0.03 * s,
+             GOLD_D)
+        part(0.0, 1.42 * s, 0.0, 0.46 * s, 0.10 * s, 0.26 * s,
+             C(118, 32, 38))
+        for mx in (-1.0, 1.0):
+            ball(mx * 0.19 * s, 1.40 * s, 0.0, 0.15 * s, 0.08 * s,
+                 0.13 * s, C(118, 32, 38), seg=6, rings=3)
+        part(0.0, 1.37 * s, 0.0, 0.40 * s, 0.05 * s, 0.24 * s, GOLD_D)
         great = _sword(dict(steel=RUST, steel_d=RUST, trim=GOLD_D, gold=GOLD_D,
                             leather=LEATHER_D, blade=C(168, 160, 148)),
                        blade_len=1.25 * s, blade_w=0.15 * s)
@@ -496,9 +593,11 @@ def rock(seed=0, big=False):
     for i in range(3):
         x = (rand01(i, seed, 31) - 0.5) * 0.6 * s
         z = (rand01(i, seed, 33) - 0.5) * 0.6 * s
-        b.box(x, 0.2 * s + i * 0.08, z, (0.8 - i * 0.15) * s, (0.5 + i * 0.1) * s,
-              (0.7 - i * 0.1) * s, STONE if i % 2 == 0 else STONE_D,
-              ry=rand01(i, seed, 35) * 1.5)
+        rx = (0.45 - i * 0.08) * s
+        ry = (0.32 + i * 0.04) * s
+        rz = (0.38 - i * 0.06) * s
+        b.sphere(x, ry * 0.82, z, rx, ry, rz, 6, 3,
+                 STONE if i % 2 == 0 else STONE_D)
     return b.build()
 
 
@@ -510,10 +609,19 @@ def house(variant=0):
     wall = STONE if variant == 2 else PLASTER
     b.box(0.0, 0.45, 0.0, 5.0 * scale, 0.9, 4.2 * scale, STONE_D)
     b.box(0.0, 1.5, 0.0, 4.6 * scale, 1.7, 3.8 * scale, wall)
+    for i in range(-2, 3):
+        b.box(i * 0.95 * scale, 0.45, 2.12 * scale, 0.86 * scale, 0.16,
+              0.10, STONE if i % 2 == 0 else STONE_D)
+        b.box(i * 0.95 * scale, 0.45, -2.12 * scale, 0.86 * scale, 0.16,
+              0.10, STONE if i % 2 else STONE_D)
     for sx in (-1.0, 1.0):
         for sz in (-1.0, 1.0):
             b.box(sx * 2.2 * scale, 1.5, sz * 1.8 * scale, 0.2, 1.8, 0.2, WOOD_D)
     b.box(0.0, 2.32, 1.9 * scale, 4.6 * scale, 0.16, 0.14, WOOD_D)
+    b.box(0.0, 1.08, 1.91 * scale, 4.6 * scale, 0.09, 0.07, WOOD_D)
+    for sx in (-1.0, 1.0):
+        b.box(sx * 1.9 * scale, 1.55, 1.92 * scale, 0.10, 1.0, 0.06,
+              WOOD_D, rz=sx * 0.55, pivot=(sx * 1.9 * scale, 1.55, 0.0))
     b.box(0.9 * scale * mirror, 1.15, 1.93 * scale, 0.95, 1.5, 0.1, WOOD)
     b.box(0.45 * scale * mirror, 1.15, 1.94 * scale, 0.08, 1.4, 0.06, WOOD_D)
     b.box(1.30 * scale * mirror, 1.15, 1.99 * scale, 0.05, 0.08, 0.03, GOLD_D)
@@ -527,12 +635,33 @@ def house(variant=0):
         b.box((wx - 0.38) * scale * mirror, 1.62, 1.92 * scale, 0.1, 0.7, 0.08, WOOD_D)
         b.box(wx * scale * mirror, 1.62, 1.956 * scale, 0.028, 0.56, 0.03, WOOD_D)
         b.box(wx * scale * mirror, 1.62, 1.956 * scale, 0.56, 0.028, 0.03, WOOD_D)
+        b.box(wx * scale * mirror, 1.24, 1.97 * scale, 0.74, 0.10, 0.18,
+              WOOD_D)
+        for fx in (-0.24, 0.0, 0.24):
+            b.sphere(wx * scale * mirror + fx, 1.33, 1.99 * scale,
+                     0.07, 0.06, 0.07, 5, 2,
+                     GREEN1 if fx else C(196, 78, 92))
     ridge = 3.42
     b.box(0.0, 2.85, 1.02 * scale, 5.4 * scale, 0.16, 2.9 * scale, STRAW,
           rx=0.54, pivot=(0.0, ridge, 0.0))
     b.box(0.0, 2.85, -1.02 * scale, 5.4 * scale, 0.16, 2.9 * scale, STRAW,
           rx=-0.54, pivot=(0.0, ridge, 0.0))
+    for t in (0.28, 0.52, 0.76):
+        y = ridge - (ridge - 2.33) * t
+        z = 1.95 * t * scale
+        b.box(0.0, y, z, 5.46 * scale, 0.05, 0.17, C(178, 142, 76),
+              rx=0.54, pivot=(0.0, ridge, 0.0))
+        b.box(0.0, y, -z, 5.46 * scale, 0.05, 0.17, C(166, 132, 70),
+              rx=-0.54, pivot=(0.0, ridge, 0.0))
     b.box(0.0, ridge, 0.0, 5.5 * scale, 0.14, 0.24, WOOD_D)
+    b.box(1.5 * scale * mirror, ridge + 0.17, -0.7 * scale,
+          0.72, 0.10, 0.72, STONE)
+    b.box(1.5 * scale * mirror, ridge + 0.24, -0.7 * scale,
+          0.40, 0.05, 0.40, C(44, 40, 38))
+    b.box(0.15 * scale * mirror, 1.78, 2.0 * scale, 0.18, 0.24, 0.12,
+          C(255, 190, 90), emissive=True)
+    b.box(0.15 * scale * mirror, 1.94, 1.99 * scale, 0.06, 0.10, 0.06,
+          WOOD_D)
     for sx in (-1.0, 1.0):
         b.quad((sx * 2.3 * scale, 0.9, -1.9 * scale), (sx * 2.3 * scale, 0.9, 1.9 * scale),
                (sx * 2.3 * scale, ridge - 0.05, 0.0), (sx * 2.3 * scale, ridge - 0.05, 0.0),
@@ -551,6 +680,14 @@ def well():
     b.box(0.0, 1.88, 0.55, 1.9, 0.12, 1.3, STRAW, rx=0.62, pivot=(0.0, 2.15, 0.0))
     b.box(0.0, 1.88, -0.55, 1.9, 0.12, 1.3, STRAW, rx=-0.62, pivot=(0.0, 2.15, 0.0))
     b.box(0.0, 1.05, 0.0, 0.22, 0.24, 0.22, WOOD)
+    b.cylinder(-0.06, 1.34, 0.0, 0.30, 0.12, 8, WOOD_D, axis="x")
+    for i in range(4):
+        a = i * math.pi / 4
+        b.box(0.0, 1.34, 0.0, 0.06, 0.56, 0.04, WOOD,
+              rx=a, pivot=(0.0, 1.34, 0.0))
+    b.box(0.0, 1.10, 0.0, 0.02, 0.52, 0.02, C(204, 194, 164))
+    b.box(0.0, 0.84, 0.0, 0.24, 0.20, 0.24, WOOD_D)
+    b.box(0.0, 0.94, 0.0, 0.20, 0.04, 0.20, C(24, 26, 30))
     return b.build()
 
 
@@ -608,6 +745,20 @@ def campfire(frame=0):
     b.cone(wob, 0.14, -wob * 0.4, 0.17, 0.72 + wob * 0.8, 5, FLAME_HI, emissive=True)
     b.box(0.2, 0.05, -0.2, 0.08, 0.08, 0.08, EMBER, emissive=True)
     b.box(-0.24, 0.05, 0.16, 0.07, 0.07, 0.07, EMBER, emissive=True)
+    return b.build()
+
+
+def torch(frame=0):
+    """A gate torch: iron post, waxed head and a four-frame flame."""
+    b = MeshBuilder()
+    b.box(0.0, 0.85, 0.0, 0.12, 1.7, 0.12, WOOD_D)
+    b.box(0.0, 0.18, 0.0, 0.34, 0.18, 0.34, STONE_D)
+    b.box(0.0, 1.66, 0.0, 0.32, 0.12, 0.32, IRON)
+    wob = (0.0, 0.05, -0.04, 0.02)[frame % 4]
+    b.cone(wob * 0.4, 1.72, 0.0, 0.19, 0.5 + wob, 6, FLAME, emissive=True)
+    b.cone(wob * 0.7, 1.74, 0.0, 0.1, 0.32 + wob * 0.5, 5, FLAME_HI,
+           emissive=True)
+    b.box(0.0, 1.71, 0.0, 0.08, 0.08, 0.08, EMBER, emissive=True)
     return b.build()
 
 

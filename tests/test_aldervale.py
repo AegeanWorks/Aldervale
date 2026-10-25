@@ -1,8 +1,12 @@
 """Unit tier: fast in-process checks for the pure engine core."""
 
 import io
+import os
+import struct
 import sys
+import tempfile
 import unittest
+import zlib
 from contextlib import redirect_stderr
 
 sys.path.insert(0, ".")
@@ -11,10 +15,15 @@ from aldervale import math3d as m3
 from aldervale import models
 from aldervale.atlas import SpriteAtlas
 from aldervale.buffer import FAR, NEAREST, Screen, pack_rgb
-from aldervale.mesh import RAMP, MeshBuilder, bake_sprite
+from aldervale.capture import png_bytes, save_png, screen_pixels
+from aldervale.mesh import EDGE_CHARS, RAMP, MeshBuilder, bake_sprite
 from aldervale.noise import fbm, value_noise
 from aldervale.rules import (ARMOR_ORDER, ITEMS, WEAPON_ORDER, Inventory,
                              damage_roll, xp_for_level)
+from aldervale import launcher
+from aldervale.studio import (collect_models, encode_screen, find_browser,
+                              screenshot_studio, write_studio)
+from aldervale.webgame import WebTerm, encode_frame
 from aldervale.entities import eid_hash
 from aldervale.hud import wrap_text
 
@@ -96,6 +105,36 @@ class TestScreen(unittest.TestCase):
         self.assertEqual(s.chars[5][2], "+")
         self.assertEqual(s.chars[3][2], "|")
 
+    def test_ramp_is_wide_and_unique(self):
+        from aldervale.buffer import RAMP
+        self.assertGreaterEqual(len(RAMP), 16)
+        self.assertEqual(len(set(RAMP)), len(RAMP))
+
+    def test_downsample_keeps_edge_colour_with_smooth_glyph(self):
+        from aldervale.mesh import Sprite
+        sp = Sprite(["#.", ".."], [[0xFFFFFF, 0x101010],
+                                   [0x101010, 0x101010]])
+        s = Screen(4, 2, color=True)
+        s.blit(sp, 2.0, 2.0, 1.0)
+        self.assertNotEqual(s.chars[1][1], " ")
+        self.assertEqual(s.fg[1][1], 0xFFFFFF)
+
+    def test_ground_tiles_are_rectangular(self):
+        from aldervale.render import GROUND_TILES
+        for row in GROUND_TILES:
+            for text in row:
+                self.assertEqual(len(text), 16)
+
+    def test_box_fill_clears_interior_and_none_keeps_it(self):
+        s = Screen(12, 6, color=False)
+        s.text(2, 2, "XXXXXXXX", 1)
+        s.box(1, 1, 10, 4, 1, fill=" ")
+        self.assertEqual("".join(s.chars[2][1:11]), "|        |")
+        s2 = Screen(12, 6, color=False)
+        s2.text(2, 2, "XXXXXXXX", 1)
+        s2.box(1, 1, 10, 4, 1)
+        self.assertIn("XXXX", "".join(s2.chars[2]))
+
     def test_blit_scales_and_occludes(self):
         mesh = models.rock(seed=1)
         sp = bake_sprite(mesh, yaw=0.0, dist=9.0, f=120.0, aspect=0.5,
@@ -126,6 +165,45 @@ class TestScreen(unittest.TestCase):
         self.assertEqual(s.frame_text(), "abcde\n     ")
 
 
+class TestCapture(unittest.TestCase):
+    def test_png_header_and_scanlines(self):
+        s = Screen(4, 3, color=True)
+        s.text(0, 0, "ABCD", pack_rgb(255, 0, 0))
+        s.text(0, 1, "    ", pack_rgb(8, 10, 16))
+        s.text(0, 2, "1234", pack_rgb(0, 255, 0))
+        w, h, rows = screen_pixels(s, scale=1)
+        blob = png_bytes(w, h, rows)
+        self.assertEqual(blob[:8], b"\x89PNG\r\n\x1a\n")
+        iw, ih = struct.unpack(">II", blob[16:24])
+        self.assertEqual((iw, ih), (w, h))
+        self.assertGreater(len(rows), w * h)
+        idat_start = blob.index(b"IDAT") + 4
+        size = struct.unpack(">I", blob[idat_start - 8:idat_start - 4])[0]
+        raw = zlib.decompress(blob[idat_start:idat_start + size])
+        self.assertEqual(len(raw), h * (w * 3 + 1))
+
+    def test_glyph_pixels_use_cell_colour(self):
+        s = Screen(1, 1, color=True)
+        s.text(0, 0, "#", pack_rgb(255, 0, 0))
+        w, h, rows = screen_pixels(s, scale=1)
+        self.assertEqual(len(rows), w * h * 3)
+        self.assertTrue(any(rows[i:i + 3] == b"\xff\x00\x00"
+                            for i in range(0, len(rows), 3)))
+
+    def test_save_png_writes_file(self):
+        s = Screen(2, 1, color=True)
+        s.text(0, 0, "OK", pack_rgb(10, 200, 20))
+        d = tempfile.mkdtemp(prefix="aldervale_capture_")
+        path = os.path.join(d, "frame.png")
+        self.addCleanup(os.rmdir, d)
+        self.addCleanup(os.remove, path)
+        iw, ih = save_png(path, s, scale=1)
+        with open(path, "rb") as f:
+            self.assertEqual(f.read(8), b"\x89PNG\r\n\x1a\n")
+        self.assertGreater(iw, 0)
+        self.assertGreater(ih, 0)
+
+
 class TestMesh(unittest.TestCase):
     def test_box_face_count(self):
         b = MeshBuilder()
@@ -146,7 +224,7 @@ class TestMesh(unittest.TestCase):
                          aspect=0.5, canvas=(26, 18))
         for row in sp.chars:
             for ch in row:
-                self.assertIn(ch, RAMP)
+                self.assertIn(ch, RAMP + EDGE_CHARS)
         self.assertGreater(sp.filled(), 3)
 
     def test_bake_yaw_frames_differ(self):
@@ -165,6 +243,148 @@ class TestMesh(unittest.TestCase):
         plain = bake_sprite(models.rock(seed=3), yaw=0.0, dist=9.0,
                             f=100.0, aspect=0.5, canvas=(24, 16))
         self.assertIsNone(plain.glow)
+
+    def test_house_carries_layered_architecture_detail(self):
+        house = models.house()
+        self.assertGreater(len(house.faces), 300)
+        smooth = sum(1 for f in house.faces if len(f) > 6 and f[6])
+        self.assertGreaterEqual(smooth, 24)
+
+    def test_knight_cape_and_shield_reach_behind_and_outboard(self):
+        mesh = models.knight()
+        xs = [v[0] for v in mesh.verts]
+        zs = [v[2] for v in mesh.verts]
+        self.assertLess(min(xs), -0.60, "shield no longer clears the body")
+        self.assertLess(min(zs), -0.25, "cape is missing from the back")
+
+    def test_boulders_are_rounded(self):
+        rock = models.rock()
+        smooth = sum(1 for f in rock.faces if len(f) > 6 and f[6])
+        self.assertGreaterEqual(smooth, 40)
+
+
+class TestStudio(unittest.TestCase):
+    def test_encode_screen_keeps_cells_and_colours(self):
+        s = Screen(4, 2, color=True)
+        s.text(0, 0, "AB", 0x112233)
+        frame = encode_screen(s)
+        self.assertEqual((frame["w"], frame["h"]), (4, 2))
+        self.assertTrue(frame["chars"][0].startswith("AB"))
+        self.assertEqual(frame["colors"][0][0], 0x112233)
+        self.assertEqual(len(frame["colors"]), 2)
+
+    def test_collect_models_samples_yaws_and_skips_missing(self):
+        atlas = SpriteAtlas().build(keys=["knight"])
+        data = collect_models(atlas)
+        self.assertEqual(len(data["yaw_indices"]), 8)
+        self.assertIn("knight", data["entries"])
+        self.assertNotIn("captain", data["entries"])
+        frames = data["entries"]["knight"]["idle"]
+        self.assertEqual(len(frames), 8)
+        self.assertGreater(frames[0]["w"], 0)
+
+    def test_knight_turnaround_frames_are_distinct(self):
+        atlas = SpriteAtlas().build(keys=["knight"])
+        data = collect_models(atlas)
+        frames = data["entries"]["knight"]["idle"]
+        rows = {"".join(f["chars"]) for f in frames}
+        self.assertEqual(len(rows), len(data["yaw_indices"]))
+
+    def test_write_studio_roundtrip(self):
+        import json
+        s = Screen(3, 2, color=True)
+        s.text(0, 0, "AB", 0x224466)
+        with tempfile.TemporaryDirectory() as d:
+            html, data = write_studio(d, 7, [3, 2],
+                                      [{"name": "tiny", "day_t": 0.2,
+                                        "frame": encode_screen(s)}],
+                                      {"entries": {}}, [])
+            with open(html, encoding="utf-8") as f:
+                page = f.read()
+            with open(data, encoding="utf-8") as f:
+                blob = f.read()
+        self.assertIn("Aldervale Studio", page)
+        self.assertTrue(blob.startswith("window.STUDIO = "))
+        parsed = json.loads(blob[len("window.STUDIO = "):].rstrip(";\n"))
+        self.assertEqual(parsed["scenes"][0]["name"], "tiny")
+
+    def test_find_browser_returns_none_or_a_real_path(self):
+        found = find_browser()
+        if found is not None:
+            self.assertTrue(os.path.isfile(found), found)
+
+    def test_screenshot_missing_page_fails_cleanly(self):
+        ok, detail = screenshot_studio("no/such/index.html", "shot.png")
+        self.assertFalse(ok)
+        self.assertTrue(detail)
+
+
+class TestLauncherUnit(unittest.TestCase):
+    def test_fixed_launch_commands(self):
+        self.assertEqual(launcher.game_command("play"),
+                         [sys.executable, "-m", "aldervale"])
+        self.assertEqual(launcher.game_command("demo"),
+                         [sys.executable, "-m", "aldervale",
+                          "--demo", "9"])
+
+    def test_page_injects_token(self):
+        page = launcher.render_page("token-123")
+        self.assertIn("token-123", page)
+        self.assertNotIn("__TOKEN__", page)
+        self.assertIn("START GAME", page)
+        self.assertIn("/studio/", page)
+        self.assertIn("autostart", page)
+
+    def test_launcher_url_and_health_helpers(self):
+        self.assertEqual(launcher.launcher_url(8765),
+                         "http://127.0.0.1:8765/")
+        self.assertEqual(launcher.launcher_url(8765, True),
+                         "http://127.0.0.1:8765/?autostart=1")
+        self.assertFalse(launcher.check_health(0))
+
+    def test_studio_file_rejects_traversal(self):
+        self.assertIsNone(launcher._studio_file("../secrets.txt"))
+        self.assertIsNone(launcher._studio_file("/etc/passwd"))
+        self.assertIsNone(launcher._studio_file(".hidden"))
+
+
+class TestWebGameUnit(unittest.TestCase):
+    def test_encode_frame_returns_rows(self):
+        s = Screen(4, 2, color=True)
+        s.text(0, 0, "AB", 0x123456)
+        frame = encode_frame(s)
+        self.assertEqual(frame["chars"][0][:2], "AB")
+        self.assertEqual(frame["colors"][0][0], 0x123456)
+        self.assertEqual(len(frame["colors"]), 2)
+
+    def test_web_term_queues_input_and_ignores_output(self):
+        term = WebTerm(80, 40)
+        term.pressed.extend(["w", "space"])
+        term.held = {"w", "shift"}
+        term.mouse = [("ldown", 4, 5, 1, 0)]
+        pressed, held = term.poll()
+        self.assertEqual(pressed, ["w", "space"])
+        self.assertEqual(held, {"w", "shift"})
+        self.assertEqual(term.poll(), ([], {"w", "shift"}))
+        self.assertEqual(term.take_mouse(), [("ldown", 4, 5, 1, 0)])
+        self.assertEqual(term.take_mouse(), [])
+        self.assertEqual(term.size(), (80, 40))
+        self.assertIsNone(term.flush())
+
+    def test_queued_mouse_events_stay_bounded(self):
+        import threading
+
+        from aldervale.webgame import MAX_QUEUED_MOUSE, WebGame
+
+        session = object.__new__(WebGame)
+        session.lock = threading.RLock()
+        session.term = WebTerm(80, 40)
+        burst = [["move", 10, 10, 2, 0] for _ in range(8)]
+        for _ in range(40):
+            session.set_input(pressed=[], held=[], mouse=burst)
+        self.assertEqual(len(session.term.mouse), MAX_QUEUED_MOUSE)
+        self.assertEqual(session.term.mouse[-1], ("move", 10, 10, 2, 0),
+                         "the newest events survive the cap")
 
 
 class TestAtlas(unittest.TestCase):

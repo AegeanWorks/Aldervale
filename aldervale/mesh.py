@@ -11,10 +11,14 @@ import math
 from . import math3d as m3
 from .buffer import _RAMP_INDEX, pack_rgb, RAMP
 
-AMBIENT = 0.34
+AMBIENT = 0.26
 LIGHT_DIR = m3.normalize((0.30, 0.60, 0.62))
+HALF_VEC = m3.normalize((LIGHT_DIR[0], LIGHT_DIR[1],
+                         LIGHT_DIR[2] + 1.0))
+SHADOW_TINT = (26, 32, 50)
 OUTLINE_CHAR = ":"
 OUTLINE_DARKEN = 0.55
+EDGE_CHARS = "|-/\\+"
 _INF = float("inf")
 
 
@@ -199,7 +203,8 @@ class MeshBuilder:
             self._fc += 1
 
 
-def _raster_tri(chars, colors, zbuf, cw, ch, tri, color, ramp, n_ramp):
+def _raster_tri(chars, colors, zbuf, cw, ch, tri, color, ramp, n_ramp,
+                ids=None, face_id=-1, shades=None):
     """Scanline-fill one projected triangle: z-test plus Gouraud luminance."""
     tri = sorted(tri, key=lambda p: p[1])
     (x0, y0, d0, l0), (x1, y1, d1, l1), (x2, y2, d2, l2) = tri
@@ -251,6 +256,9 @@ def _raster_tri(chars, colors, zbuf, cw, ch, tri, color, ramp, n_ramp):
                     ci = n_ramp - 1
                 chars[idx] = ramp[ci]
                 colors[idx] = color
+                if ids is not None:
+                    ids[idx] = face_id
+                    shades[idx] = ci
 
 
 def bake_sprite(mesh, yaw=0.0, pitch=0.30, dist=9.0, f=140.0, aspect=0.5,
@@ -276,13 +284,15 @@ def bake_sprite(mesh, yaw=0.0, pitch=0.30, dist=9.0, f=140.0, aspect=0.5,
     chars = [" "] * (cw * ch)
     colors = [0] * (cw * ch)
     zbuf = [_INF] * (cw * ch)
+    fids = [-1] * (cw * ch)
+    fshade = [0] * (cw * ch)
     gchars = gcolors = gzbuf = None
     if has_em:
         gchars = [" "] * (cw * ch)
         gcolors = [0] * (cw * ch)
         gzbuf = [_INF] * (cw * ch)
     smooth_normals = _smooth_normals(mesh)
-    for face in mesh.faces:
+    for face_no, face in enumerate(mesh.faces):
         ia, ib, ic, idd, col, em, smooth = face
         n = m3.face_normal(rotated[ia], rotated[ib], rotated[ic])
         if n[2] <= 0.02:
@@ -302,19 +312,33 @@ def bake_sprite(mesh, yaw=0.0, pitch=0.30, dist=9.0, f=140.0, aspect=0.5,
             lums = [face_lum, face_lum, face_lum, face_lum]
         if em:
             lums = [max(v, 0.88) for v in lums]
-        k = 0.42 + 0.58 * face_lum
-        fc = pack_rgb(
-            min(255, ((col >> 16) & 255) * k),
-            min(255, ((col >> 8) & 255) * k),
-            min(255, (col & 255) * k),
-        )
+        cr = (col >> 16) & 255
+        cg = (col >> 8) & 255
+        cb = col & 255
+        exposed = (face_lum - AMBIENT) / (1.0 - AMBIENT)
+        k = 0.30 + 0.70 * exposed
+        shade = max(0.0, 1.0 - exposed)
+        lum_c = (cr * 299 + cg * 587 + cb * 114) // 1000
+        metal = ((max(cr, cg, cb) - min(cr, cg, cb)) < 60 and lum_c > 110) \
+            or (cr > 150 and cg > 110 and cb < cg * 0.8)
+        spec = 0.0
+        if metal and not em:
+            ndoth = m3.dot(n, HALF_VEC)
+            if ndoth > 0.0:
+                spec = (ndoth ** 14) * (0.55 if exposed > 0.35 else 0.25)
+        r = cr * k + shade * SHADOW_TINT[0] * 0.28 + spec * 250.0
+        g = cg * k + shade * SHADOW_TINT[1] * 0.28 + spec * 250.0
+        b = cb * k + shade * SHADOW_TINT[2] * 0.28 + spec * 250.0
+        fc = pack_rgb(min(255, r), min(255, g), min(255, b))
         p0, p1, p2, p3 = proj[ia], proj[ib], proj[ic], proj[idd]
         t0 = (p0[0], p0[1], p0[2], lums[0])
         t1 = (p1[0], p1[1], p1[2], lums[1])
         t2 = (p2[0], p2[1], p2[2], lums[2])
         t3 = (p3[0], p3[1], p3[2], lums[3])
-        _raster_tri(chars, colors, zbuf, cw, ch, (t0, t1, t2), fc, ramp, n_ramp)
-        _raster_tri(chars, colors, zbuf, cw, ch, (t0, t2, t3), fc, ramp, n_ramp)
+        _raster_tri(chars, colors, zbuf, cw, ch, (t0, t1, t2), fc, ramp,
+                    n_ramp, fids, face_no, fshade)
+        _raster_tri(chars, colors, zbuf, cw, ch, (t0, t2, t3), fc, ramp,
+                    n_ramp, fids, face_no, fshade)
         if em and gchars is not None:
             gl = pack_rgb(
                 min(255, ((col >> 16) & 255) * 1.05),
@@ -327,6 +351,7 @@ def bake_sprite(mesh, yaw=0.0, pitch=0.30, dist=9.0, f=140.0, aspect=0.5,
             g3 = (t3[0], t3[1], t3[2], 0.95)
             _raster_tri(gchars, gcolors, gzbuf, cw, ch, (g0, g1, g2), gl, ramp, n_ramp)
             _raster_tri(gchars, gcolors, gzbuf, cw, ch, (g0, g2, g3), gl, ramp, n_ramp)
+    _inner_edges(chars, colors, fids, fshade, cw, ch)
     _outline(chars, colors, cw, ch)
     box = _crop_bounds(chars, cw, ch) if crop else (0, 0, cw, ch)
     main = _pack_grid(chars, colors, cw, ch, box)
@@ -355,6 +380,54 @@ def _smooth_normals(mesh):
                 a[1] += n[1]
                 a[2] += n[2]
     return acc
+
+
+def _color_delta(c1, c2):
+    return (abs(((c1 >> 16) & 255) - ((c2 >> 16) & 255)) +
+            abs(((c1 >> 8) & 255) - ((c2 >> 8) & 255)) +
+            abs((c1 & 255) - (c2 & 255)))
+
+
+def _inner_edges(chars, colors, fids, fshade, cw, ch):
+    """Line art only on meaningful face boundaries, never on flat facets."""
+    marks = {}
+    for y in range(ch):
+        row = y * cw
+        up = row - cw
+        for x in range(cw):
+            idx = row + x
+            if chars[idx] == " ":
+                continue
+            fid = fids[idx]
+            vert = False
+            horiz = False
+            if x > 0 and fids[idx - 1] not in (-1, fid):
+                if _color_delta(colors[idx], colors[idx - 1]) >= 58:
+                    vert = True
+            if y > 0 and fids[up + x] not in (-1, fid):
+                if _color_delta(colors[idx], colors[up + x]) >= 58:
+                    horiz = True
+            if vert or horiz:
+                marks[idx] = "+" if (vert and horiz) else ("|" if vert else "-")
+    keep = {}
+    for idx, ch in marks.items():
+        x = idx % cw
+        if ch in ("|", "+"):
+            if ((idx - cw) in marks and marks[idx - cw] in ("|", "+")) or \
+               ((idx + cw) in marks and marks[idx + cw] in ("|", "+")):
+                keep[idx] = ch
+                continue
+        if ch in ("-", "+"):
+            if ((x > 0 and (idx - 1) in marks and marks[idx - 1] in ("-", "+"))
+                    or (x + 1 < cw and (idx + 1) in marks
+                        and marks[idx + 1] in ("-", "+"))):
+                keep[idx] = ch
+    for idx, ch in keep.items():
+        c = colors[idx]
+        chars[idx] = ch
+        colors[idx] = pack_rgb(((c >> 16) & 255) * 0.80,
+                               ((c >> 8) & 255) * 0.80,
+                               (c & 255) * 0.80)
 
 
 def _outline(chars, colors, cw, ch):
