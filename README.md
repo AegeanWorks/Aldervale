@@ -5,7 +5,9 @@
 ALDERVALE - a 2.5D medieval RPG rendered entirely in tiny ASCII cells. Low-poly
 3D models (knights, wolves, a walled castle) are baked into shaded character
 sprites, marched over a voxel heightfield with fog, day/night light, weather and
-water, and composited with a full RPG on top: quests, combat, loot, shops, saves.
+water, and composited with a full RPG on top: quests, combat, loot, shops,
+saves.
+
 It runs in the terminal **and in a browser** through a local canvas thin client
 over the same Python engine. Standard library only; no dependencies, no assets,
 no build step.
@@ -284,8 +286,6 @@ gitignored.)
   HUD rows cost nothing and full-motion frames stay small.
 - Everything is deterministic from `--seed`: terrain, village layout, spawns,
   and the rng behind combat rolls.
-
-> **License history:** versions up to and including `agpl-final` remain available under GNU AGPL-3.0.
 
 ## 📜 License
 
