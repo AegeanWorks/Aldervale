@@ -1067,7 +1067,7 @@ class TestLaunchers(unittest.TestCase):
                 self.assertIn(name, readme, "%s is missing from the README tree" % name)
         for name in ("COMMERCIAL.md", "LICENSE"):
             self.assertIn(name, readme, "%s is missing from the README" % name)
-        self.assertIn("## License", readme, "the README needs a License section")
+        self.assertIn("## 📜 License", readme, "the README needs the canonical License section")
         self.assertNotIn("Aegean-E/AIKit", readme,
                          "the badge must point at the current AIKit repository")
 

@@ -260,8 +260,11 @@ aldervale/
 ├── ADAPTATION.md       <- canon to code: where story changes go and why
 ├── .aikit/             <- this project's memory: record, ledger, decisions
 ├── .gitignore
-├── COMMERCIAL.md       <- Aegean-E commercial licence and dual-licensing terms
-├── LICENSE             <- GNU AGPL-3.0 with the dual-licensing notice
+├── COMMERCIAL.md       <- Commercial licensing terms (ACL-1.0)
+├── LICENSE             <- Aegean Game License 1.1 (AGL-1.1): DRM-free personal play
+├── LICENSES/           <- REUSE license texts
+├── REUSE.toml          <- Machine-readable SPDX metadata
+├── ASSETS.md           <- Asset/data manifest: what the license covers
 └── README.md
 ```
 
@@ -282,6 +285,8 @@ gitignored.)
 - Everything is deterministic from `--seed`: terrain, village layout, spawns,
   and the rng behind combat rolls.
 
-## License
+> **License history:** versions up to and including `agpl-final` remain available under GNU AGPL-3.0.
 
-GNU Affero General Public License v3.0; see [LICENSE](LICENSE). For commercial licensing and proprietary rights, see [COMMERCIAL.md](COMMERCIAL.md).
+## 📜 License
+
+Free for personal play under the Aegean Game License 1.1 (AGL-1.1); see [LICENSE](LICENSE). It is DRM-free: Licensor ships no DRM and a distributor may not add it. Streaming, modding and free mods are allowed. Commercial use, paid mods and AI training need the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).

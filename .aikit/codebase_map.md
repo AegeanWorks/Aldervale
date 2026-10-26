@@ -716,7 +716,7 @@
 ### [`tests/test_integration.py`](tests/test_integration.py)
 > *Integration tier: world generation, quest chain, rendering and the CLI.*
 
-**Size**: `1657` lines (`63111` bytes)
+**Size**: `1657` lines (`63128` bytes)
 
 **Classes:**
 - `class TestTerrain`

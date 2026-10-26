@@ -192,3 +192,9 @@ Context, Decision and Consequences lines.
 - **Decision**: Extract `Game.tick(dt)` as the single simulation step: build the frame environment, advance the world only in `play`/`title`/`dead`, sync the death state, arm the victory overlay once and count its clock, and tick the fps counter. `Game.run` and `WebGame` (through a new `WebGame.step`) both call it. Bound the browser mouse queue at 64 events, keeping the newest.
 - **Consequences**: Both builds now pause, die and win identically, and the terminal loop keeps its behaviour. `Game.tick` is covered directly (menu freeze, death transition, victory clock) and `WebGame.step` is covered by a fake game, so the delegation cannot silently drift again. A live Edge run confirmed the world clock stops in the inventory and resumes on close, a forced death reaches the `dead` state and respawns on Enter, and the victory overlay arms with a moving clock. 169 tests and 4/4 gates.
 - Cross-principle check: no principle section changed. Serves PRINCIPLE-001 (one code path), PRINCIPLE-014 (failing-first coverage of the divergence) and PRINCIPLE-015 (live dogfooding of the browser build).
+
+## Licensing migration (agpl-final)
+
+- New versions use the Aegean Game License 1.1 (AGL-1.1); versions up to and including `agpl-final` remain under GNU AGPL-3.0.
+- Rights holder: AegeanWorks; commercial use under ACL-1.0.
+- Counsel review of the 1.1 texts remains pending.
