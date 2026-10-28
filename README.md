@@ -1,7 +1,7 @@
 # aldervale
 
 <!-- aegean:media:start -->
-<p align="center"><img src="assets/logo.png" alt="Aldervale logo" width="96" height="96"></p>
+<p align="center"><img src="assets/logo.jpg" alt="Aldervale logo" width="96" height="96"></p>
 <p align="center"><img src="assets/social-preview.png" alt="Aldervale social preview" width="100%"></p>
 <!-- aegean:media:end -->
 
