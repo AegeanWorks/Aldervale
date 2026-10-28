@@ -15,6 +15,10 @@
   "ui_source": "detected",
   "topics": [
     "aikit",
+    "source-available",
+    "aegean-game-license",
+    "drm-free",
+    "commercial-license",
     "ascii",
     "ascii-art",
     "ascii-graphics",
@@ -29,16 +33,18 @@
     "software-rendering",
     "terminal-based",
     "terminal-game",
-    "voxel",
-    "zero-dependencies",
-    "drm-free",
-    "source-available",
-    "aegeanworks"
+    "voxel"
   ],
   "topics_source": "ai:kilo:2026-10-27",
   "topics_reviewed_at": "2026-10-28",
   "topics_choice": [
     "aegeanworks",
     "software"
+  ],
+  "license_topics": [
+    "source-available",
+    "aegean-game-license",
+    "drm-free",
+    "commercial-license"
   ]
 }
