@@ -5,53 +5,48 @@
   "has_ui": true,
   "ui_kind": "web",
   "palette": [
-    "#07111f",
-    "#0e2a47",
-    "#c084fc",
-    "#e2f8ff"
+    "#0a0a0a",
+    "#1f1f1f",
+    "#facc15",
+    "#fb923c"
   ],
+  "motif": "compass",
+  "layout": "editorial",
   "assets": {
     "logo": {
       "path": "assets/logo.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:20",
+      "generated_at": "2026-10-28T08:46:48",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "AL monogram in magenta, dark navy, subtitle fits, coherent.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "AL compass, unique",
+        "score": 90,
+        "reviewed_at": "2026-10-28T08:58:20"
       }
     },
     "social_preview": {
       "path": "assets/social-preview.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:20",
+      "generated_at": "2026-10-28T08:46:48",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "AL icon, title, RPG description, WEB tag, dark aesthetic coherent.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "Consistent template, legible",
+        "score": 89,
+        "reviewed_at": "2026-10-28T08:58:20"
       }
     },
     "social_preview_png": {
       "path": "assets/social-preview.png",
-      "status": "approved",
+      "status": "pending_review",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:21",
-      "review": {
-        "status": "approved",
-        "reviewer": "subagent:vision-review",
-        "method": "structural",
-        "notes": "Rendered from the approved 1280x640 social SVG; exact dimensions verified.",
-        "score": null,
-        "reviewed_at": "2026-10-28T08:16:15"
-      }
+      "generated_at": "2026-10-28T08:46:49",
+      "review": null
     }
   },
   "screenshots": [
@@ -69,9 +64,9 @@
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "2026-10-28-index.png \u2014 real game title screen 'ALDERVALE STUDIO', non-blank.",
-        "score": 90,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "Real index UI with matrix readout, non-blank",
+        "score": 89,
+        "reviewed_at": "2026-10-28T08:58:20"
       }
     }
   ]

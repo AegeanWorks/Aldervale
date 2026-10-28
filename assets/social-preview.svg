@@ -1,20 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc" data-motif="compass" data-layout="editorial">
   <title id="title">Aldervale social preview</title>
   <desc id="desc">ALDERVALE - a 2.5D medieval RPG rendered entirely in tiny ASCII cells. Low-poly 3D models (knights, wolves, a walled castle) are baked into shaded character sprites, marched over a voxel heightfield with fog, day/night light, weather and water, and composited with a full RPG on top: quests, combat, loot, shops, saves.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07111f"/><stop offset="1" stop-color="#0e2a47"/></linearGradient>
-    <radialGradient id="glow" cx="0.2" cy="0.15" r="0.9"><stop offset="0" stop-color="#c084fc" stop-opacity="0.30"/><stop offset="1" stop-color="#c084fc" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a0a0a"/><stop offset="1" stop-color="#1f1f1f"/></linearGradient>
+    <radialGradient id="glow" cx="0.2" cy="0.12" r="0.95"><stop offset="0" stop-color="#facc15" stop-opacity="0.28"/><stop offset="1" stop-color="#facc15" stop-opacity="0"/></radialGradient>
+    <linearGradient id="band" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#facc15"/><stop offset="1" stop-color="#fb923c"/></linearGradient>
   </defs>
   <rect width="1280" height="640" fill="url(#bg)"/>
   <rect width="1280" height="640" fill="url(#glow)"/>
-  <g opacity="0.16" stroke="#e2f8ff">
-    <path d="M0 160h1280M0 320h1280M0 480h1280M256 0v640M512 0v640M768 0v640M1024 0v640"/>
+  
+  <g opacity="0.15" stroke="#F8FAFC">
+    <path d="M0 128H1280M0 256H1280M0 384H1280M0 512H1280M256 0V640M512 0V640M768 0V640M1024 0V640"/>
   </g>
-  <rect x="64" y="112" width="176" height="176" rx="42" fill="#07111f" stroke="#c084fc" stroke-opacity="0.55" stroke-width="2"/>
-  <circle cx="152" cy="200" r="58" fill="none" stroke="#c084fc" stroke-opacity="0.45" stroke-width="2"/>
-  <text x="152" y="224" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="62" font-weight="700" fill="#c084fc">AL</text>
-  <text x="300" y="192" font-family="Segoe UI, Arial, sans-serif" font-size="72" font-weight="700" fill="#e2f8ff">Aldervale</text>
-  <text x="300" y="250" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#e2f8ff" fill-opacity="0.78">ALDERVALE - a 2.5D medieval RPG rendered entirely in</text><text x="300" y="298" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#e2f8ff" fill-opacity="0.78">tiny ASCII cells. Low-poly 3D models (knights,</text><text x="300" y="346" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#e2f8ff" fill-opacity="0.78">wolves, a walled castle) are baked into shaded</text>
-  <text x="64" y="560" font-family="Segoe UI, Arial, sans-serif" font-size="22" letter-spacing="6" fill="#e2f8ff" fill-opacity="0.55">AEGEANWORKS · WEB</text>
-  <text x="1216" y="560" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#c084fc">github.com/AegeanWorks/Aldervale</text>
+  <g transform="translate(1030 304) scale(2.35)" opacity="0.85"><circle cx="0" cy="0" r="56" fill="none" stroke="#facc15" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="0" cy="0" r="42" fill="none" stroke="#facc15" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -48L14 0L0 48L-14 0Z" fill="#facc15" fill-opacity="0.82"/><circle cx="0" cy="0" r="6" fill="#F8FAFC"/></g>
+  <text x="76" y="238" font-family="Georgia, Times New Roman, serif" font-size="76" font-weight="700" fill="#F8FAFC">Aldervale</text><path d="M78 270H690" stroke="#facc15" stroke-width="3"/><text x="78" y="316" font-family="Segoe UI, Arial, sans-serif" font-size="20" letter-spacing="6" fill="#facc15">AEGEANWORKS · WEB</text>
+  <text x="80" y="378" font-family="Georgia, Times New Roman, serif" font-size="29" fill="#F8FAFC" fill-opacity="0.74">ALDERVALE - a 2.5D medieval RPG rendered entirely</text><text x="80" y="420" font-family="Georgia, Times New Roman, serif" font-size="29" fill="#F8FAFC" fill-opacity="0.74">in tiny ASCII cells. Low-poly 3D models (knights,</text><text x="80" y="462" font-family="Georgia, Times New Roman, serif" font-size="29" fill="#F8FAFC" fill-opacity="0.74">wolves, a walled castle) are baked into shaded</text>
+  <rect x="80" y="506" width="76" height="38" rx="19" fill="#0B1220" fill-opacity="0.55" stroke="#94A3B8" stroke-opacity="0.35"/><text x="118.0" y="531" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#F8FAFC" fill-opacity="0.82">aikit</text><rect x="168" y="506" width="76" height="38" rx="19" fill="#0B1220" fill-opacity="0.55" stroke="#94A3B8" stroke-opacity="0.35"/><text x="206.0" y="531" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#F8FAFC" fill-opacity="0.82">ascii</text><rect x="336" y="506" width="116" height="38" rx="19" fill="#0B1220" fill-opacity="0.55" stroke="#94A3B8" stroke-opacity="0.35"/><text x="394.0" y="531" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#F8FAFC" fill-opacity="0.82">ascii art</text>
+  <text x="76" y="592" font-family="Segoe UI, Arial, sans-serif" font-size="19" letter-spacing="6" fill="#F8FAFC" fill-opacity="0.50">AEGEANWORKS</text>
+  <text x="1204" y="592" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#facc15">github.com/AegeanWorks/Aldervale</text>
 </svg>
