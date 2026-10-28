@@ -15,6 +15,7 @@
   "ui_source": "detected",
   "topics": [
     "aikit",
+    "aikit-integrated",
     "source-available",
     "aegean-game-license",
     "drm-free",
@@ -32,8 +33,7 @@
     "rpg-game",
     "software-rendering",
     "terminal-based",
-    "terminal-game",
-    "voxel"
+    "terminal-game"
   ],
   "topics_source": "ai:kilo:2026-10-27",
   "topics_reviewed_at": "2026-10-28",
