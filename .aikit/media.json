@@ -17,35 +17,35 @@
       "path": "assets/logo.png",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T11:43:04",
+      "generated_at": "2026-10-28T13:53:35",
       "review": {
         "status": "approved",
-        "reviewer": "subagent:vision-review",
+        "reviewer": "subagent:brand-review",
         "method": "vision",
-        "notes": "Fix verified: monogram AV unique and matches project; legible, unclipped, premium.",
-        "score": 92,
-        "reviewed_at": "2026-10-28T11:49:29"
+        "notes": "AV monogram badge, GAME eyebrow, Aldervale single line, compass background fits narrative roguelike navigation, no footer, no clipping.",
+        "score": 90,
+        "reviewed_at": "2026-10-28T14:00:01"
       }
     },
     "social_preview": {
       "path": "assets/social-preview.png",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T11:43:04",
+      "generated_at": "2026-10-28T13:53:35",
       "review": {
         "status": "approved",
-        "reviewer": "subagent:vision-review",
+        "reviewer": "subagent:brand-review",
         "method": "vision",
-        "notes": "Strong hierarchy; legible, unclipped; premium card, no watermark.",
-        "score": 90,
-        "reviewed_at": "2026-10-28T11:49:29"
+        "notes": "Tagline 'A local-first text adventure that remembers your choices.' complete. Chips (ascii, ascii art, ascii graphics) readable. Compass imagery fits roguelike theme. No defects.",
+        "score": 88,
+        "reviewed_at": "2026-10-28T14:00:01"
       }
     },
     "artwork": {
       "path": "assets/artwork.jpg",
       "status": "pending_review",
       "commit": "",
-      "generated_at": "2026-10-28T11:43:04",
+      "generated_at": "2026-10-28T13:51:05",
       "review": null
     }
   },
