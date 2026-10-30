@@ -6,33 +6,34 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `25`
-- **Total Classes**: `60`
-- **Total Top-Level Functions**: `186`
-- **Total Class Methods**: `375`
-- **Total Source Lines**: `11166`
+- **Total Python Modules**: `31`
+- **Total Classes**: `70`
+- **Total Top-Level Functions**: `226`
+- **Total Class Methods**: `438`
+- **Total Source Lines**: `15501`
 
 ---
 
 ## 📦 Modules & Exported Symbols
 
 ### [`aldervale/__init__.py`](aldervale/__init__.py)
-> *ALDERVALE: a 2.5D medieval RPG rendered entirely in tiny ASCII cells.*
+> *ALDERVALE: a 2.5D medieval RPG in pixel graphics and ASCII cells.*
 
-**Size**: `3` lines (`99` bytes)
+**Size**: `3` lines (`95` bytes)
 
 ---
 
 ### [`aldervale/__main__.py`](aldervale/__main__.py)
 > *ALDERVALE command line entry point.*
 
-**Size**: `304` lines (`13034` bytes)
+**Size**: `352` lines (`15293` bytes)
 
 **Functions:**
 - `def _build_parser()`
 - `def _fail(what, why, fix)`
 - `def run(argv)`
 - `def _web_shot(args)`
+- `def _gfx_shot(args)`
 - `def _play(game, demo)`
 - `def _screenshot(game, path)` - *Render one scripted vista to a plain text file (no terminal).*
 - `def _benchmark(game)`
@@ -89,7 +90,7 @@
 ### [`aldervale/capture.py`](aldervale/capture.py)
 > *Headless frame capture: turn a char-cell Screen into a truecolor PNG.*
 
-**Size**: `198` lines (`6613` bytes)
+**Size**: `206` lines (`6904` bytes)
 
 **Functions:**
 - `def _scaled(color, factor)`
@@ -99,6 +100,7 @@
 - `def _chunk(tag, payload)`
 - `def png_bytes(width, height, rgb_rows)` - *Encode raw RGB scanlines (no filter byte) as a PNG byte string.*
 - `def save_png(path, screen, scale)` - *Write a Screen to a truecolor PNG; return (width, height).*
+- `def save_frame(path, frame, scale)` - *Write a pixel FrameBuffer to a truecolor PNG; return (width, height).*
 
 ---
 
@@ -137,12 +139,12 @@
 ### [`aldervale/game.py`](aldervale/game.py)
 > *Game shell: states, input, camera, main loop, demo autopilot.*
 
-**Size**: `660` lines (`23515` bytes)
+**Size**: `738` lines (`26447` bytes)
 
 **Classes:**
 - `class Game` - *Drives one play session from title screen to victory.*
-  - Method `.__init__(seed, width, height, fps, color, demo_secs, benchmark, save_path, terrain_size)`
-  - Method `.boot(term, progress)` - *Bake sprites and build the world; call before run().*
+  - Method `.__init__(seed, width, height, fps, color, demo_secs, benchmark, save_path, terrain_size, gfx, gfx_size, render_mode)`
+  - Method `.boot(term, progress, gfx)` - *Bake sprites and build the world; call before run().*
   - Method `._open_screen()`
   - Method `._ensure_camera()`
   - Method `._update_camera(force)`
@@ -157,7 +159,8 @@
   - Method `._on_mouse(ev)`
   - Method `._on_title_mouse(kind, col, row)`
   - Method `._activate_title(index)`
-  - Method `.pick_world(col, row)` - *Screen cell to a world point using the depth buffer.*
+  - Method `.pick_world(col, row)` - *Screen cell to a world point using the depth buffer or a raycast.*
+  - Method `._pick_ray(col, row)` - *March the heightfield for a click in the GPU build.*
   - Method `._click_at(col, row)`
   - Method `._apply_movement_held(held)` - *Continuous movement, turning, guard and sprint from held keys.*
   - Method `._movement(fwd, side, sprint)`
@@ -174,13 +177,118 @@
   - Method `._key_pause(key)`
   - Method `._key_dead(key)`
   - Method `._render(env)`
+  - Method `._draw_hud(env)`
+
+---
+
+### [`aldervale/gfx.py`](aldervale/gfx.py)
+> *Truecolor pixel frame buffer and baked pixel sprites.*
+
+**Size**: `157` lines (`5583` bytes)
+
+**Classes:**
+- `class FrameBuffer` - *A w x h truecolor image plus a per-pixel depth buffer (column-major).*
+  - Method `.__init__(w, h)`
+  - Method `.clear(color)`
+  - Method `.set(x, y, color, depth)`
+  - Method `.blend(x, y, color, alpha, depth)` - *Alpha-blend a colour over one pixel; optionally write its depth.*
+  - Method `.add(x, y, color, alpha)` - *Additive blend used by emissive sprites and light pools.*
+  - Method `.fill_column(x, y0, y1, color, depth)` - *Fill a clipped vertical run [y0, y1) in one column.*
+  - Method `.fill_column_pattern(x, y0, y1, pattern, depth, phase)` - *Fill a vertical run with a repeating RGB strip (world texture).*
+  - Method `.fill(color)`
+  - Method `.column_depth(x)`
+  - Method `.sample_depth(x, y)`
+  - Method `.to_row_major(scale)` - *Return (width, height, rgb bytes) for PNG/browser presentation.*
+- `class PixelSprite` - *A baked RGBA billboard plus an optional additive glow layer.*
+  - Method `.__init__(w, h, rgba, glow)`
+  - Method `.filled()`
+
+---
+
+### [`aldervale/gfxatlas.py`](aldervale/gfxatlas.py)
+> *Pixel sprite atlas and source-mesh cache.*
+
+**Size**: `358` lines (`12965` bytes)
+
+**Classes:**
+- `class PixelAtlas` - *Baked pixel frames: (model_key, pose_name) -> [PixelSprite].*
+  - Method `.__init__(yaw_steps)`
+  - Method `.build(progress, keys)`
+  - Method `.get(model, pose, frame)`
+  - Method `.yaw_frame(ent_yaw, cam_yaw, steps)`
+  - Method `.steps_for(model, pose)`
+  - Method `.mesh_for(model, pose)`
+
+**Functions:**
+- `def _yaw_steps(key)`
+- `def _face_color(col, face_lum, normal)`
+- `def _shade_table(color)` - *31 pre-shaded variants for Gouraud interpolation, 0.70..1.30.*
+- `def _raster_tri(img, zbuf, cw, ch, tri, shades, face_lum, box)`
+- `def _outline(img, alpha, cw, ch, box)` - *Darken silhouette pixels by 45% so figures read against terrain.*
+- `def _pack(img, alpha, cw, box)`
+- `def bake_pixel_sprite(mesh, yaw, pitch, dist, f, aspect, canvas, light, smooth_normals)` - *Bake a mesh into a cropped RGBA PixelSprite viewed from yaw/pitch.*
+
+---
+
+### [`aldervale/gfxmodels.py`](aldervale/gfxmodels.py)
+> *Runtime 3D model renderer for nearby actors.*
+
+**Size**: `393` lines (`14260` bytes)
+
+**Classes:**
+- `class ModelRenderer` - *Draws cached meshes for (model, pose) pairs into a pixel frame.*
+  - Method `.__init__(atlas)`
+  - Method `._prepare(model, pose)`
+  - Method `.draw(fb, cam, ent, tr, tg, tb, flash, flash_color, outline, depth_bias)` - *Rasterise one actor; return the number of pixels written.*
+  - Method `._composite(fb, tmp, mask, box, bias)`
+  - Method `._draw_into(fb, cam, ent, tr, tg, tb, flash, flash_color, outline)`
+
+**Functions:**
+- `def _outline_model(img, mask, w, h, x0, y0, x1, y1)` - *Darken silhouette pixels of one model by 45% for contrast.*
+- `def _raster_tri_smooth(img, zbuf, w, h, tri, table, mask)` - *Gouraud scanline fill: interpolates a 0.35..1.0 shade index.*
+- `def _raster_tri(img, zbuf, w, h, tri, color, mask)` - *Scanline-fill one triangle with a shared column-major z-buffer.*
+
+---
+
+### [`aldervale/gfxrender.py`](aldervale/gfxrender.py)
+> *Truecolor scene renderer: sky, raster terrain, 3D models, billboards, weather.*
+
+**Size**: `910` lines (`34251` bytes)
+
+**Classes:**
+- `class GfxCamera` - *Pixel projection derived from the cell camera, same view and alignment.*
+  - Method `.__init__(w, h, x, z, y, yaw, pitch, f, fy, horizon, col_angle, dist)`
+  - Method `.from_camera(cam, w, h)`
+
+**Functions:**
+- `def render_scene(fb, world, cam, env, cell_w, cell_h, models)` - *Draw a complete pixel frame; return the cell-depth grid for picking.*
+- `def _cell_depth(fb, cam, cw, ch)`
+- `def _sky(fb, cam, env)`
+- `def _disc(fb, cam, az, el, radius, color)`
+- `def _mountains(fb, cam, env)`
+- `def _clouds_draw(fb, cam, env)`
+- `def _birds(fb, cam, env)`
+- `def _ground_palette(ter)` - *Cache the static material/light/texture gain per heightfield cell.*
+- `def _fill_run(fb, x, y0, y1, color, depth)` - *Fill a terrain run, adding a soft vertical grain when it is large.*
+- `def _terrain(fb, ter, cam, env, wet, snow)`
+- `def _ground_details(fb, world, cam, env)`
+- `def _cast_shadows(fb, world, cam, env)` - *Soft sun shadows stretched away from the sun, clipped to terrain.*
+- `def _light_pools(fb, world, cam, env)`
+- `def _entities(fb, world, cam, env, models)`
+- `def _sprite_for(atlas, ent, cam)`
+- `def _dot(fb, col, bottom, sprite, tr, tg, tb, depth_z)`
+- `def _contact_shadow(fb, cam, ent, col, bottom, depth_z, rows)`
+- `def _blit_sprite(fb, sprite, col, bottom, rows, tr, tg, tb, depth_z, flash, flash_color, additive)`
+- `def _weather(fb, weather, env)`
+- `def _fireflies(fb, world, cam, env)`
+- `def _hurt_vignette(fb, world)`
 
 ---
 
 ### [`aldervale/hud.py`](aldervale/hud.py)
 > *HUD and menu rendering: bars, minimap, dialogue, shop, inventory, titles.*
 
-**Size**: `633` lines (`24012` bytes)
+**Size**: `632` lines (`23968` bytes)
 
 **Classes:**
 - `class ItemStub`
@@ -216,7 +324,7 @@
 ### [`aldervale/inspect.py`](aldervale/inspect.py)
 > *Headless inspection harness: visible frames plus a scripted control probe.*
 
-**Size**: `831` lines (`27425` bytes)
+**Size**: `840` lines (`27843` bytes)
 
 **Classes:**
 - `class ScriptedTerm` - *A terminal double that replays queued presses, holds and mouse events.*
@@ -228,7 +336,7 @@
   - Method `.flush()`
 
 **Functions:**
-- `def build_game(seed, width, height, terrain_size, atlas_keys)` - *Create a booted, headless Game ready for rendering or probing.*
+- `def build_game(seed, width, height, terrain_size, atlas_keys, gfx, gfx_size, render_mode)` - *Create a booted, headless Game ready for rendering or probing.*
 - `def _calm(game)`
 - `def _reset(game, *, hp, stamina)`
 - `def _place(game, x, z, yaw, day_t)`
@@ -268,7 +376,7 @@
 ### [`aldervale/launcher.py`](aldervale/launcher.py)
 > *Localhost web launcher for Aldervale.*
 
-**Size**: `374` lines (`14133` bytes)
+**Size**: `458` lines (`17699` bytes)
 
 **Classes:**
 - `class Handler`
@@ -282,6 +390,8 @@
 - `def spawn_game(mode)` - *Open the real game in a new console window (Windows).*
 - `def render_page(token)`
 - `def ensure_web_session(server)` - *Start building the browser-play session once, in the background.*
+- `def ensure_web_session3d(server, weather, day_t)` - *Start building the WebGL session once, in the background.*
+- `def play3d_url(port)`
 - `def launcher_url(port, autostart)` - *The local URL, optionally asking the page to start the game on load.*
 - `def play_url(port)`
 - `def check_health(port)` - *True when an Aldervale launcher already owns the port.*
@@ -351,7 +461,7 @@
 ### [`aldervale/models.py`](aldervale/models.py)
 > *Every 3D model in the realm: actors, creatures, flora and architecture.*
 
-**Size**: `871` lines (`38371` bytes)
+**Size**: `875` lines (`38632` bytes)
 
 **Functions:**
 - `def C(r, g, b)`
@@ -404,7 +514,7 @@
 ### [`aldervale/render.py`](aldervale/render.py)
 > *Scene renderer: animated sky, voxel-marched terrain and billboard sprites.*
 
-**Size**: `813` lines (`31684` bytes)
+**Size**: `817` lines (`31852` bytes)
 
 **Classes:**
 - `class Camera` - *View parameters plus precomputed per-column ray angles.*
@@ -544,7 +654,7 @@
 ### [`aldervale/webgame.py`](aldervale/webgame.py)
 > *Browser play client: a localhost thin client over the real Python engine.*
 
-**Size**: `464` lines (`15409` bytes)
+**Size**: `606` lines (`20344` bytes)
 
 **Classes:**
 - `class WebTerm` - *Terminal double used by Game; queues input and ignores output.*
@@ -555,18 +665,51 @@
   - Method `.write(text)`
   - Method `.flush()`
 - `class WebGame` - *One live session: Game + WebTerm + a 20 fps simulation thread.*
-  - Method `.__init__(seed, width, height)`
+  - Method `.__init__(seed, width, height, gfx, gfx_size, render_mode)`
   - Method `.set_input(pressed, held, mouse)`
   - Method `._player()`
   - Method `.snapshot()` - *Latest frame plus a small state header; marks the client alive.*
+  - Method `.scene()` - *Per-tick WebGL scene: camera, entities and HUD text.*
+  - Method `.world_bundle()`
+  - Method `.model_bundle()`
   - Method `.state()` - *Diagnostics for tests and the agent; does not count as a client poll.*
   - Method `.step()` - *One client frame: input, the shared simulation step, then render.*
   - Method `._loop()`
   - Method `.close()`
 
 **Functions:**
-- `def encode_frame(screen)` - *Rows of glyphs plus packed RGB colours for the canvas client.*
+- `def encode_frame(screen, pixels)` - *Rows of glyphs plus packed RGB colours for the canvas client.*
 - `def _clean_mouse(events)`
+
+---
+
+### [`aldervale/webglclient.py`](aldervale/webglclient.py)
+> *WebGL browser client for the Aldervale GPU path.*
+
+**Size**: `1498` lines (`56207` bytes)
+
+---
+
+### [`aldervale/webglscene.py`](aldervale/webglscene.py)
+> *World and model payloads for the WebGL client.*
+
+**Size**: `293` lines (`10288` bytes)
+
+**Classes:**
+- `class MeshAtlas` - *Minimal atlas for the GPU path: source meshes, no baked sprites.*
+  - Method `.__init__()`
+  - Method `.build(progress, keys)`
+  - Method `.mesh_for(model, pose)`
+  - Method `.get(model, pose, frame)`
+  - Method `.steps_for(model, pose)`
+  - Method `.yaw_frame(ent_yaw, cam_yaw, steps)`
+
+**Functions:**
+- `def _b64(data)`
+- `def world_bundle(world)` - *Heightfield floats and a lit RGBA colour map, row-major.*
+- `def model_bundle(atlas)` - *Triangle soup for every (model, pose), shared across all entities.*
+- `def _hud_rows(screen)`
+- `def scene(game, world, seq)` - *Small per-tick scene description for the WebGL client.*
 
 ---
 
@@ -622,7 +765,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `632` lines (`24145` bytes)
+**Size**: `893` lines (`35784` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -674,11 +817,28 @@
   - Method `.test_studio_file_rejects_traversal()`
 - `class TestWebGameUnit`
   - Method `.test_encode_frame_returns_rows()`
+  - Method `.test_encode_frame_carries_column_major_pixels()`
   - Method `.test_web_term_queues_input_and_ignores_output()`
   - Method `.test_queued_mouse_events_stay_bounded()`
 - `class TestAtlas`
   - Method `.test_yaw_frame_wraparound()`
   - Method `.test_heights_registered()`
+- `class TestGfx`
+  - Method `.test_framebuffer_column_fill_and_depth()`
+  - Method `.test_framebuffer_blend_and_row_major_scale()`
+  - Method `.test_bake_pixel_sprite_crops_and_sets_alpha()`
+  - Method `.test_bake_pixel_sprite_keeps_emissive_glow()`
+  - Method `.test_pixel_atlas_builds_a_model_and_reports_steps()`
+  - Method `.test_gfx_camera_keeps_the_cell_view_alignment()`
+  - Method `.test_model_renderer_draws_real_mesh_geometry()`
+  - Method `.test_framebuffer_pattern_fill_repeats_and_sets_depth()`
+  - Method `.test_smooth_triangle_interpolates_the_shade_table()`
+  - Method `.test_model_renderer_depth_bias_composites_over_foreground()`
+  - Method `.test_pixel_atlas_exposes_meshes_for_runtime_3d()`
+- `class TestWebGL`
+  - Method `.test_model_bundle_covers_every_pose()`
+  - Method `.test_world_scene_and_raycast()`
+  - Method `.test_webgl_page_has_a_token_slot()`
 - `class TestRules`
   - Method `.test_damage_roll_bounds()`
   - Method `.test_damage_roll_defence_reduces()`
@@ -693,6 +853,8 @@
   - Method `.test_bad_fps_refused()`
   - Method `.test_bad_width_refused()`
   - Method `.test_bad_demo_seconds_refused()`
+  - Method `.test_bad_gfx_size_refused()`
+  - Method `.test_unknown_gfx_scene_refused()`
 - `class TestReviewRegressions` - *Regressions for defects found in the aldervale code review.*
   - Method `.test_pack_rgb_clamps_channels()`
   - Method `.test_water_fog_reaches_fog_colour()`
@@ -716,7 +878,7 @@
 ### [`tests/test_integration.py`](tests/test_integration.py)
 > *Integration tier: world generation, quest chain, rendering and the CLI.*
 
-**Size**: `1657` lines (`63128` bytes)
+**Size**: `1746` lines (`66702` bytes)
 
 **Classes:**
 - `class TestTerrain`
@@ -763,6 +925,11 @@
   - Method `.test_potion_use_heals()`
   - Method `.test_render_frame_smoke()`
   - Method `.test_save_and_load_via_game()`
+- `class TestGfxRender`
+  - Method `.setUpClass()`
+  - Method `._frame(day_t)`
+  - Method `.test_pixel_render_writes_colour_depth_and_hud()`
+  - Method `.test_night_is_darker_than_day()`
 - `class TestCliSubprocess`
   - Method `._run(*args)`
   - Method `.test_version()`
@@ -780,6 +947,11 @@
   - Method `.snapshot()`
   - Method `.state()`
   - Method `.set_input(pressed, held, mouse)`
+- `class FakeWebSession3D`
+  - Method `.scene()`
+  - Method `.state()`
+  - Method `.world_bundle()`
+  - Method `.model_bundle()`
 - `class TestLauncherHTTP`
   - Method `.setUp()`
   - Method `._post(payload, token)`
@@ -787,6 +959,7 @@
   - Method `.test_play_page_frame_and_state()`
   - Method `.test_input_api_forwards_and_requires_token()`
   - Method `.test_frame_reports_loading_before_session()`
+  - Method `.test_webgl_page_and_assets()`
   - Method `.test_page_and_token_protected_start()`
   - Method `.test_duplicate_start_is_coalesced()`
   - Method `.test_health_and_unknown_path()`

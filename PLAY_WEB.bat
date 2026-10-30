@@ -22,7 +22,7 @@ if "%~1"=="--version" (
     %RUNCMD% -m aldervale --version
     exit /b 0
 )
-title Aldervale Web - close this window to stop the server
+title Aldervale 3D - close this window to stop the server
 %RUNCMD% -m aldervale --serve --open-play
 if errorlevel 1 pause
 exit /b 0

@@ -6,38 +6,42 @@
 <!-- aegean:media:end -->
 
 
-ALDERVALE - a 2.5D medieval RPG rendered entirely in tiny ASCII cells. Low-poly
-3D models (knights, wolves, a walled castle) are baked into shaded character
-sprites, marched over a voxel heightfield with fog, day/night light, weather and
-water, and composited with a full RPG on top: quests, combat, loot, shops,
-saves.
+ALDERVALE - a 2.5D medieval RPG with three renderers over one engine: a GPU
+WebGL2 build, a software pixel build and a dense ASCII terminal build. Low-poly
+3D models (knights, wolves, a walled castle) are baked into RGBA sprites or
+character cells, or streamed as meshes to the GPU, over a voxel heightfield with
+fog, day/night light, weather and water, and composited with a full RPG on top:
+quests, combat, loot, shops, saves.
 
-It runs in the terminal **and in a browser** through a local canvas thin client
-over the same Python engine. Standard library only; no dependencies, no assets,
-no build step.
+The browser opens on a high-resolution WebGL2 canvas through a localhost thin
+client; `/play` keeps the software pixel renderer as a fallback, and the terminal
+build keeps the character-cell view. All run the same Python World, Game and
+HUD. Standard library only; no dependencies, no assets, no build step.
 
 ## 30-Second Cold-Start Quick Reference
 
-- **Runtime Prerequisites**: Python 3.10 or newer (standard library only) and a
-  dark-theme terminal that supports 24-bit colour (Windows Terminal, Terminal.app
-  or any modern xterm). PLAY.bat opens a dedicated maximized Windows Terminal
-  window, and the renderer scales with the window up to 260x110 cells - a bigger
-  window or a smaller font (Ctrl+Minus) buys more detail, and at tiny glyphs the
-  screen reads as pixel art.
+- **Runtime Prerequisites**: Python 3.10 or newer (standard library only). The
+  GPU build needs a WebGL2 browser; the software pixel build at `/play` needs
+  only canvas 2D. `PLAY_WEB.bat` opens the GPU build. The terminal build needs a
+  dark-theme terminal with 24-bit colour (Windows Terminal, Terminal.app or any
+  modern xterm); PLAY.bat opens a dedicated maximized Windows Terminal window,
+  and the ASCII renderer scales with the window up to 260x110 cells.
 - **Canonical Regression Shield Gate**:
   ```bash
   python -m unittest discover
   ```
 - **Run something now** (under 10 seconds):
   ```bash
-  PLAY.bat    # Windows: double-click it in Explorer - one click, no typing
-  ./run.sh    # macOS and Linux
-  python -m aldervale --demo 9      # hands-free attract mode
+  PLAY_WEB.bat    # Windows: double-click for GPU 3D in the browser
+  ./play_web.sh   # macOS and Linux: GPU 3D in the browser
+  python -m aldervale --serve --open-play # GPU 3D browser game (same engine)
+  python -m aldervale --serve --open # launcher: 3D / pixel / terminal / Studio
+  python -m aldervale --gfx-shot frame.png --gfx-scene village
+  PLAY.bat        # Windows: the ASCII terminal build
+  ./run.sh        # macOS and Linux: the ASCII terminal build
+  python -m aldervale --demo 9      # hands-free ASCII attract mode
   python -m aldervale --screenshot vista.txt && type vista.txt
-  PLAY_WEB.bat                     # one click: browser game
-  python -m aldervale --serve --open-play # browser game (same engine)
-  python -m aldervale --serve --open # launcher: terminal / browser / Studio
-  python -m aldervale --inspect .inspect # 19 PNG images + 17 control checks
+  python -m aldervale --inspect .inspect # 19 ASCII PNG images + 17 control checks
   python -m aldervale               # terminal play (WASD, SPACE, E, I, H)
   ```
 
@@ -68,7 +72,94 @@ element to the exact file that owns it.
 
 ## Graphics
 
-The renderer aims at dense ASCII art rather than flat silhouettes:
+The browser has two renderers; the terminal keeps a third. All read the same
+world, camera, meshes and clock.
+
+### GPU 3D (browser, `PLAY_WEB.bat` / `/play3d`)
+
+- A WebGL2 canvas draws the world at native window resolution with smooth
+  terrain, perspective-correct models, a sky gradient, a moving water plane and
+  a transparent text HUD.
+- The heightfield and a lit RGBA material map are uploaded once as textures.
+  A 320x320 terrain grid is displaced in the vertex shader and lit/fogged in
+  the fragment shader; no per-pixel ray march is needed.
+- One triangle-soup bundle carries all 41 models and 88 poses (~2.4 MB). The
+  browser instantiates the real meshes for every visible actor, prop, tree and
+  building, so there is no billboard LOD in this build.
+- Each tick sends a compact scene description (camera, visible entities, tint,
+  HUD text) rather than a pixel frame; the Python simulation remains
+  authoritative.
+- A 1024x1024 directional shadow map covers the area around the camera; the
+  terrain depth pass culls front faces to avoid self-shadow acne, and PCF
+  sampling softens the model and house shadows. Night adds stars and a moon;
+  rain and snow are GPU overlays driven by the world weather.
+- Up to six nearby point lights from campfires, torches, shrines and house
+  windows warm the terrain and models at night; the water shader fades into
+  shoreline foam and a drifting procedural cloud layer crosses the sky.
+- Rain darkens figures and roofs and adds a wet sheen; snow caps up-facing
+  surfaces, while fire and torch flames stay clear. Fires, torches and windows
+  flicker.
+- Rain and snow grade the whole scene: overcast sky, dimmer sun, closer fog,
+  hidden stars and drifting cloud shadows.
+- The sky layers drifting clouds with sun-lit edges and wide sun/moon halos;
+  rain adds brief lightning flashes.
+- Water reflects the horizon at grazing angles, catches a sun glint, deepens
+  from turquoise shallows to blue, and shows rain ripple rings.
+- The colour texture carries a material id: the terrain shader adds
+  grass/forest/road/rock/snow grain, flower flecks and wet/snow response.
+- The HUD minimap is a real terrain map with water, roads, entity dots and
+  a gold player marker, replacing the ASCII map in the GPU build.
+- The GPU HUD uses a graphical status panel: name, level, gold, HP/STA/XP
+  bars, weapon and armor, potions and the quest line. The ASCII status block is
+  suppressed while messages and the location plate stay; small stages fall back
+  to the ASCII HUD.
+- Click-to-walk uses a CPU heightfield raycast on the server; movement, combat,
+  shops, dialogue, saves and the HUD are the same code as the other builds.
+  The ASCII minimap is suppressed in the GPU build so the browser map owns
+  that corner.
+- `http://127.0.0.1:PORT/play3d?weather=rain&day=0.8` previews a scene; the
+  query is applied when the GPU session is first built.
+
+### Pixel graphics (browser, `/play`)
+
+- A 288x162 truecolor software frame buffer is upscaled with nearest-neighbour
+  sampling, retaining the pixel-art fallback for machines without WebGL2.
+- The same low-poly meshes are baked once into square-pixel RGBA billboards at
+  4-12 yaw frames per pose, with Gouraud face shading, a metallic specular,
+  silhouette outlines and a separate additive glow layer for fire and windows.
+- Nearby characters and the closest props are drawn from the actual meshes:
+  perspective projection, backface culling, world-space sun lighting, a 1px
+  silhouette outline and the shared terrain z-buffer.  The player is always
+  drawn in 3D and composited with a small depth bias so a foreground terrain
+  crest cannot slice its legs; the nearest four actors and two props join it,
+  and everything farther away falls back to baked billboards, so the frame
+  stays cheap.
+- Square-pixel baking keeps billboard and mesh proportions aligned: a knight
+  is as tall at 30 m as the same knight is when the runtime renderer picks up
+  the mesh at 12 m.
+- Sun-cast shadows stretch from nearby actors, props and trees and are clipped
+  against the terrain depth buffer; large ground runs get a subtle
+  world-anchored grain instead of a flat slab, and water reflects the horizon
+  colour toward the far shore.
+- Rounded mesh parts (helms, pauldrons, wolf bodies, tree canopies) use
+  Gouraud shading across their vertices; flat plates and cloth stay faceted so
+  the low-poly style remains intentional.
+- Terrain is a per-column ray-march over the heightfield: each material has a
+  lit colour palette, coherent texture and per-cell grain, adjacent spans merge
+  into colour runs before filling to suppress banding, and distance fog, water
+  ripples, shoreline foam, rain and snow are mixed per pixel.
+- The sky has a vertical gradient, sun/moon discs with a halo, stars, thin
+  drifting cloud wisps, three fogged mountain ridges and crossing birds.
+- Campfires, torches, shrines and cottage lanterns add warm light pools;
+  every figure gets a contact shadow; fireflies appear at night; a hurt
+  vignette is drawn into the frame itself.
+- The RPG interface stays the existing text HUD, composited over the pixels by
+  the browser; modal screens dim the world and text gets a dark outline.
+- `python -m aldervale --gfx-shot frame.png --gfx-scene village` writes one
+  pixel frame with no terminal or browser, and `--gfx-size WxH` selects the
+  internal resolution.
+
+### ASCII graphics (terminal, `PLAY.bat`)
 
 - a 19-level glyph ramp (space through `$`) shades every face;
 - terrain has a per-cell material grid (sand, grass, forest, dirt, rock, snow)
@@ -81,26 +172,17 @@ The renderer aims at dense ASCII art rather than flat silhouettes:
   snow sparkle and shells on their own materials;
 - every billboard casts a dithered contact shadow and a sun-direction shadow;
   campfires, gate torches, shrines and door lanterns light the ground;
-- shorelines have wet sand and foam; chimneys smoke, birds cross the day sky,
-  and a gold place-name plate (plus `N` on the minimap) names the area;
 - sprite baking draws line art only on meaningful face boundaries (`|`, `-`,
   `+`), adds a metallic specular and a cool shadow tint, and the downsampler
   uses a smooth mean glyph with the highest-contrast cell colour so plate,
   cloth and blade edges survive;
-- figures mix rounded primitives (ellipsoid helms and pauldrons, wolf body and
-  head, skull and ribcage) with plate geometry, and internal line art is drawn
-  only at strong material boundaries;
 - cottages carry stone footings, timber braces, layered thatch, a capped
   chimney, flower boxes and a lit door lantern; wells have a pulley, rope and
   bucket; boulders are rounded ellipsoids;
 - a deterministic clear/rain/snow cycle, persisted in saves, with in-world
-  messages and a weather label on the location plate; rain cools the ground
-  and leaves puddle glints, snow dusts it in pale sparkles, and both have own scenes;
-- the default camera sits at 4.6 m with terrain line-of-sight pull-in, so a
-  knight spans about 20 of 60 rows instead of 14; the sprite and portrait
-  contact sheets make every model change directly reviewable;
-- the inspect harness renders all of this at 132x60, 80x40 and 40x20 without a
-  terminal.
+  messages and a weather label on the location plate;
+- the inspect harness renders the ASCII view at 132x60, 80x40 and 40x20 without
+  a terminal.
 
 ## Controls
 
@@ -129,7 +211,8 @@ The renderer aims at dense ASCII art rather than flat silhouettes:
 ```text
 python -m aldervale [--seed N] [--width W] [--height H] [--fps N]
                     [--demo [SECS]] [--benchmark] [--no-color]
-                    [--screenshot PATH] [--inspect DIR]
+                    [--screenshot PATH] [--gfx-shot PATH]
+                    [--gfx-scene NAME] [--gfx-size WxH] [--inspect DIR]
                     [--inspect-scale N] [--web-shot PATH]
                     [--web-dir DIR] [--web-query QUERY]
                     [--web-size WxH] [--serve [PORT]] [--open]
@@ -137,14 +220,18 @@ python -m aldervale [--seed N] [--width W] [--height H] [--fps N]
 ```
 
 `--demo` runs a non-interactive attract mode (also works piped, for CI);
-`--benchmark` renders 60 headless frames and reports timing (~23 ms/frame at
-132x60 on a 2026 laptop); `--screenshot` writes one plain-text vista frame.
+`--benchmark` renders 60 headless ASCII frames and reports timing (~23 ms/frame
+at 132x60 on a 2026 laptop); `--screenshot` writes one plain-text ASCII vista;
+`--gfx-shot` writes one truecolor pixel frame to a PNG (`--gfx-scene` picks the
+scripted camera, `--gfx-size` the internal resolution).
 Exit codes: 0 success, 1 failure (What/Why/Fix on stderr), 2 misuse.
 
 ### Seeing the game without a terminal
 
-`--inspect DIR` boots the real renderer headlessly and writes the views a
-reviewer or an AI agent needs to debug graphics and controls:
+`--inspect DIR` boots the ASCII renderer headlessly and writes the views a
+reviewer or an AI agent needs to debug the terminal build. For the pixel build,
+use `--gfx-shot` (one frame) or `--serve --open-play` and capture the canvas
+(this is the authoritative graphics view).
 
 - nineteen PNGs: seventeen scenes (world, castle day/night, camp night,
   cottage, rain, snow, combat and menus) plus `15_sprites.png` and
@@ -187,28 +274,32 @@ python -m aldervale --web-shot shots/village.png --web-dir .inspect \
 with no Python dependency. Its DOM text matches the terminal grid exactly, so
 this is the authoritative view; PNG/txt remain for browserless tooling.
 
-### Browser edition (same engine, canvas view)
+### Browser edition (same engine, GPU 3D + pixel fallback)
 
 ```text
-PLAY_WEB.bat                          # Windows: one click, browser game
-sh play_web.sh                        # POSIX: one command, browser game
+PLAY_WEB.bat                          # Windows: one click, GPU 3D
+sh play_web.sh                        # POSIX: one command, GPU 3D
 python -m aldervale --serve --open-play
 ```
 
-`/play` runs the **same Python World, Game, HUD and renderer** as the terminal;
-the browser only sends keyboard/mouse state and draws the returned chars and
-colours into a canvas. The forge takes about nine seconds, then the game runs at
-20 fps with WASD/arrows, SPACE, SHIFT, B, E, I, M, H, ESC, click-to-walk,
-right-drag look and wheel zoom. Browser saves use `saves/aldervale_web.json`, so
-save-and-quit and continue work there too. Both builds run the same simulation
-step, so menus freeze the world, death offers respawn and the victory banner
-appears in the browser exactly as in the terminal. The terminal version is
-unchanged: `PLAY.bat` or `python -m aldervale`.
+`/play3d` runs the **same Python World, Game and HUD** as the terminal; the
+browser sends keyboard/mouse state and receives a compact scene description,
+then draws the heightfield, water and real model meshes in WebGL2 with a text
+HUD overlay. The GPU forge is about a second, and rendering is uncapped in the
+browser (the simulation still ticks at 20 fps). WASD/arrows, SPACE, SHIFT, B,
+E, I, M, H, ESC, click-to-walk, right-drag look and wheel zoom all work. GPU
+saves use `saves/aldervale_web3d.json`.
 
-The server binds `127.0.0.1` only and keeps one shared session. It pauses after
-20 s without a browser poll and resumes on the next request. Opening a second
-browser tab attaches to the same game. Expose the port deliberately if you want
-LAN play; there is no account system.
+`/play` is the software pixel fallback with the same simulation, HUD and
+controls; it saves to `saves/aldervale_web.json`. Both builds run the same
+simulation step, so menus freeze the world, death offers respawn and the victory
+banner appears in the browser exactly as in the terminal. The terminal version
+keeps the ASCII renderer: `PLAY.bat` or `python -m aldervale`.
+
+The server binds `127.0.0.1` only. The pixel and GPU sessions each pause after
+20 s without a browser poll and resume on the next request. Opening a second
+tab for the same page attaches to that session. Expose the port deliberately if
+you want LAN play; there is no account system.
 
 ### Launcher: terminal, browser and Studio in one page
 
@@ -216,14 +307,15 @@ LAN play; there is no account system.
 python -m aldervale --serve --open
 ```
 
-**START GAME** opens the native terminal game in a new console (Windows);
-**WATCH DEMO** runs the attract mode; **PLAY IN BROWSER** goes to `/play`;
-**Open Studio** serves the inspection Studio at `/studio/`. `--open-play` opens
-the browser game directly, while `--autostart` opens the launcher and starts the
-native game immediately. If a launcher is already running, the same command only
-reopens the page. Ports below 1024 are refused; use `--serve PORT` to pick
-another. Only fixed launch commands are exposed and `/start` + `/api/input`
-require the per-process token.
+**PLAY GRAPHICS 3D** opens the WebGL2 build at `/play3d`; **PLAY PIXEL** opens
+the software fallback at `/play`; **START GAME (TERMINAL)** opens the native
+ASCII game in a new console (Windows); **WATCH DEMO** runs the attract mode;
+**Open Studio** serves the inspection Studio at `/studio/`.
+`--open-play` opens the browser game directly, while `--autostart` opens the
+launcher and starts the native game immediately. If a launcher is already
+running, the same command only reopens the page. Ports below 1024 are refused;
+use `--serve PORT` to pick another. Only fixed launch commands are exposed and
+`/start` + `/api/input` require the per-process token.
 
 ## What's Inside
 
@@ -240,6 +332,12 @@ aldervale/
 │   ├── __main__.py     <- CLI: play, demo, screenshot, inspect, triads
 │   ├── term.py         <- VT100 terminal control, non-blocking key input
 │   ├── buffer.py       <- char-cell screen: colour, depth, diff flush
+│   ├── gfx.py          <- truecolor pixel framebuffer and sprite pixels
+│   ├── gfxatlas.py     <- bakes meshes into RGBA billboards for the browser
+│   ├── gfxmodels.py    <- runtime 3D mesh rasteriser for nearby actors/props
+│   ├── gfxrender.py    <- pixel sky, terrain, billboards, lights, weather
+│   ├── webglscene.py   <- GPU world/model bundles and scene encoder
+│   ├── webglclient.py  <- WebGL2 page: terrain, water, models, HUD overlay
 │   ├── capture.py      <- Screen to truecolor PNG with a built-in 5x7 font
 │   ├── inspect.py      <- scene PNGs, text mirrors and the control probe
 │   ├── studio.py       <- exact browser studio, model viewer, headless shots
@@ -266,6 +364,7 @@ aldervale/
 ├── ADAPTATION.md       <- canon to code: where story changes go and why
 ├── .aikit/             <- this project's memory: record, ledger, decisions
 ├── .gitignore
+├── assets/
 ├── COMMERCIAL.md       <- Commercial licensing terms (ACL-1.0)
 ├── LICENSE             <- Aegean Game License 1.1 (AGL-1.1): DRM-free personal play
 ├── LICENSES/           <- REUSE license texts
@@ -279,15 +378,26 @@ gitignored.)
 
 ## Technical Notes
 
-- The renderer is a 2.5D composite: a per-column ray-march over the height
-  grid (front-to-back with a hidden-row buffer) draws terrain, water and fog;
-  entities are depth-tested billboards chosen from 20 yaw-baked frames per
-  pose, baked at high cell density with silhouette outlines and flat-lit
-  faces so they read as solid models rather than noise; emissive faces (fire,
-  crystals, windows) bloom at night. The camera orbits and tilts freely, and
-  clicking the world walks there by reading the depth buffer.
-- Frames are emitted as foreground-only truecolor runs of changed cells, so
-  HUD rows cost nothing and full-motion frames stay small.
+- The GPU build uploads a 320x320 height texture, a lit RGBA material texture and a ~2.4 MB triangle-soup model bundle once, then renders a displaced terrain grid, a water plane and real model instances in WebGL2. Each 20 fps tick sends a small scene JSON instead of a pixel frame; a server-side heightfield raycast resolves click-to-walk.
+- The pixel build renders into a 288x162 column-major RGB buffer. A per-column
+  ray-march over the height grid fills vertical runs and a per-pixel depth
+  buffer, terrain spans merge into colour runs, and the nearest actors and
+  props are rasterised from their real meshes with backface culling and
+  world-space lighting.  Distant entities are depth-tested RGBA billboards
+  baked from the same meshes at 4-12 yaw frames per pose. Rounded faces use
+  precomputed vertex normals and Gouraud shade tables, while sun-cast shadows
+  and a light world-anchored ground grain break up large flat spans. The
+  browser receives the raw frame plus the text HUD, upscales the pixels with
+  nearest-neighbour sampling and draws HUD glyphs on top, so menus and status
+  text stay crisp.
+- The terminal build is the original 2.5D composite: a per-column ray-march
+  draws terrain, water and fog; entities are depth-tested character-cell
+  billboards with silhouette outlines; emissive faces bloom at night. The
+  camera orbits and tilts freely, and clicking the world walks there by reading
+  the depth buffer.
+- Terminal frames are emitted as foreground-only truecolor runs of changed
+  cells, so HUD rows cost nothing and full-motion frames stay small. Browser
+  frames are sent as base64 column-major RGB plus the HUD grid.
 - Everything is deterministic from `--seed`: terrain, village layout, spawns,
   and the rng behind combat rolls.
 

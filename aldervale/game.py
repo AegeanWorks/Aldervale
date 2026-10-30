@@ -21,7 +21,11 @@ class Game:
 
     def __init__(self, seed=7, width=None, height=None, fps=30, color=True,
                  demo_secs=None, benchmark=False, save_path=SAVE_NAME,
-                 terrain_size=None):
+                 terrain_size=None, gfx=False, gfx_size=(288, 162),
+                 render_mode=None):
+        if render_mode is None:
+            render_mode = "pixel" if gfx else "ascii"
+        self.render_mode = render_mode
         self.seed = seed
         self.terrain_size = terrain_size
         self.fps_cap = fps
@@ -33,6 +37,13 @@ class Game:
         self.screen = None
         self.world = None
         self.atlas = None
+        self.gfx = render_mode == "pixel"
+        self.frame = None
+        self.model_renderer = None
+        self._last_env = None
+        if self.gfx:
+            from .gfx import FrameBuffer
+            self.frame = FrameBuffer(*gfx_size)
         self.state = "title"
         self.running = True
         self.cam_yaw = math.pi
@@ -65,10 +76,28 @@ class Game:
         self.w = width or 132
         self.h = height or 60
 
-    def boot(self, term, progress=None):
+    def boot(self, term, progress=None, gfx=None):
         """Bake sprites and build the world; call before run()."""
+        if gfx is not None:
+            self.render_mode = "pixel" if gfx else "ascii"
+            self.gfx = self.render_mode == "pixel"
         self.term = term
-        self.atlas = SpriteAtlas()
+        if self.render_mode == "webgl":
+            from .webglscene import MeshAtlas
+            self.atlas = MeshAtlas()
+            self.frame = None
+            self.model_renderer = None
+        elif self.render_mode == "pixel":
+            from .gfx import FrameBuffer
+            from .gfxatlas import PixelAtlas
+            if self.frame is None:
+                self.frame = FrameBuffer(288, 162)
+            self.atlas = PixelAtlas()
+            self.model_renderer = None
+        else:
+            self.atlas = SpriteAtlas()
+            self.frame = None
+            self.model_renderer = None
         self.atlas.build(progress=progress or (lambda k, f: None))
         self.world = World(self.seed, self.atlas,
                            terrain_size=self.terrain_size)
@@ -96,7 +125,7 @@ class Game:
             cx = kx + math.sin(ang) * 58.0
             cz = kz + math.cos(ang) * 58.0
             cy = w.terrain.height(cx, cz) + 12.0
-            yaw = ang + math.pi / 2.0
+            yaw = ang + math.pi
             self.cam = Camera(self.w, self.h, cx, cz, cy, yaw, pitch=0.24)
             return
         fx = math.sin(self.cam_yaw)
@@ -167,6 +196,7 @@ class Game:
         if self.world.victory_shown:
             self.victory_t += dt
         self._tick_fps(now)
+        self._last_env = env
         return env
 
     def _sync_death(self):
@@ -296,7 +326,9 @@ class Game:
             self._key_title(tokens[index])
 
     def pick_world(self, col, row):
-        """Screen cell to a world point using the depth buffer."""
+        """Screen cell to a world point using the depth buffer or a raycast."""
+        if self.render_mode == "webgl":
+            return self._pick_ray(col, row)
         if self.cam is None or not (0 <= col < self.w and 0 <= row < self.h):
             return None
         depth = self.screen.depth[row][col]
@@ -305,6 +337,30 @@ class Game:
         ang = self.cam.yaw + self.cam.col_angle[col]
         return (self.cam.x + math.sin(ang) * depth,
                 self.cam.z + math.cos(ang) * depth)
+
+    def _pick_ray(self, col, row):
+        """March the heightfield for a click in the GPU build."""
+        if self.cam is None or not (0 <= col < self.w and 0 <= row < self.h):
+            return None
+        ang = self.cam.yaw + self.cam.col_angle[col]
+        dx = math.sin(ang)
+        dz = math.cos(ang)
+        slope = (self.cam.horizon - row) / max(1.0, self.cam.fy)
+        terrain = self.world.terrain
+        t = 0.6
+        step = 0.45
+        while t < 230.0:
+            wx = self.cam.x + dx * t
+            wz = self.cam.z + dz * t
+            if not terrain.in_bounds(wx, wz):
+                t += step
+                step *= 1.012
+                continue
+            if self.cam.y + slope * t <= terrain.height(wx, wz):
+                return (wx, wz)
+            t += step
+            step *= 1.012
+        return None
 
     def _click_at(self, col, row):
         p = self.world.player
@@ -629,32 +685,54 @@ class Game:
         self._ensure_camera()
         self._update_camera()
         scr = self.screen
-        render_scene(scr, self.world, self.cam, env)
+        if self.render_mode == "webgl":
+            scr.clear()
+            self._draw_hud(env)
+            if self.term is not None:
+                scr.flush(self.term)
+            return
+        if self.frame is not None:
+            from .gfxmodels import ModelRenderer
+            from .gfxrender import GfxCamera, render_scene as render_pixels
+            if self.model_renderer is None:
+                self.model_renderer = ModelRenderer(self.atlas)
+            gcam = GfxCamera.from_camera(self.cam, self.frame.w, self.frame.h)
+            scr.clear()
+            scr.depth = render_pixels(self.frame, self.world, gcam, env,
+                                      scr.w, scr.h, self.model_renderer)
+        else:
+            render_scene(scr, self.world, self.cam, env)
+        self._draw_hud(env)
+        if self.term is not None:
+            scr.flush(self.term)
+
+    def _draw_hud(self, env):
+        scr = self.screen
         if self.state == "title":
             hud.draw_title(scr, self.world, self.cam, env, self.menu_sel,
                            os.path.exists(self.save_path))
-        else:
-            hud.draw_world_overlays(scr, self.world, self.cam)
-            modal = self.state in ("inventory", "help", "pause", "shop",
-                                   "dialogue")
-            if not modal and not self.world.player.dead:
-                hud.draw_hud(scr, self.world, env, self.fps, self.show_map)
+            return
+        hud.draw_world_overlays(scr, self.world, self.cam)
+        modal = self.state in ("inventory", "help", "pause", "shop",
+                               "dialogue")
+        if not modal and not self.world.player.dead:
+            hud.draw_hud(scr, self.world, env, self.fps,
+                         self.show_map and self.render_mode != "webgl")
+        if self.frame is None:
             hud.draw_hurt_vignette(scr, self.world)
-            if self.world.victory_shown:
-                hud.draw_victory(scr, self.world, self.victory_t)
-            if self.state == "dialogue":
-                hud.draw_dialogue(scr, self.world, self.dialogue,
-                                  self.dlg_page, self.dlg_choice)
-            elif self.state == "shop":
-                hud.draw_shop(scr, self.world, self.shop_mode, self.shop_sel,
-                              self.shop_message)
-            elif self.state == "inventory":
-                hud.draw_inventory(scr, self.world, self.inv_message)
-            elif self.state == "help":
-                hud.draw_help(scr)
-            elif self.state == "pause":
-                hud.draw_pause(scr, self.menu_sel)
-            if self.world.player.dead and self.state != "pause":
-                hud.draw_death(scr, self.world)
-        if self.term is not None:
-            scr.flush(self.term)
+        if self.world.victory_shown:
+            hud.draw_victory(scr, self.world, self.victory_t)
+        if self.state == "dialogue":
+            hud.draw_dialogue(scr, self.world, self.dialogue,
+                              self.dlg_page, self.dlg_choice)
+        elif self.state == "shop":
+            hud.draw_shop(scr, self.world, self.shop_mode, self.shop_sel,
+                          self.shop_message)
+        elif self.state == "inventory":
+            hud.draw_inventory(scr, self.world, self.inv_message)
+        elif self.state == "help":
+            hud.draw_help(scr)
+        elif self.state == "pause":
+            hud.draw_pause(scr, self.menu_sel)
+        if self.world.player.dead and self.state != "pause":
+            hud.draw_death(scr, self.world)

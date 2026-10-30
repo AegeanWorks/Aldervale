@@ -1,9 +1,10 @@
 """Localhost web launcher for Aldervale.
 
-A small stdlib HTTP server serves a branded start page and a token-protected
-endpoint that opens the real game in a new terminal window. It also serves the
-inspection Studio from `.inspect/` so the launcher, Studio and game share one
-local web surface. No external dependency is used.
+A small stdlib HTTP server serves a branded start page, opens the native ASCII
+game in a new terminal window and hosts the pixel-graphics browser build at
+/play. It also serves the inspection Studio from `.inspect/` so the launcher,
+Studio and both game builds share one local web surface. No external dependency
+is used.
 """
 
 import json
@@ -19,12 +20,12 @@ import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 PROJECT = Path(__file__).resolve().parent.parent
 STUDIO_DIR = PROJECT / ".inspect"
 TOKEN = secrets.token_urlsafe(24)
-LAUNCHER_VERSION = "1.0"
+LAUNCHER_VERSION = "1.2"
 
 
 def game_command(mode):
@@ -79,6 +80,41 @@ def ensure_web_session(server):
             server.web_error = error
 
     threading.Thread(target=build, daemon=True).start()
+
+
+def ensure_web_session3d(server, weather=None, day_t=None):
+    """Start building the WebGL session once, in the background."""
+    with server.web_lock3d:
+        if (server.web_session3d is not None or server.web_building3d or
+                server.web_error3d):
+            return
+        server.web_building3d = True
+
+    def build():
+        session = None
+        error = None
+        try:
+            from .webgame import WebGame
+            session = WebGame(seed=7, width=132, height=60,
+                              render_mode="webgl")
+            if weather:
+                session.game.world.set_weather(weather)
+            if day_t is not None:
+                world = session.game.world
+                world.time = ((float(day_t) - 0.20) % 1.0) * world.day_length
+                world.day_t = float(day_t)
+        except Exception as exc:
+            error = "%s: %s" % (type(exc).__name__, exc)
+        with server.web_lock3d:
+            server.web_session3d = session
+            server.web_building3d = False
+            server.web_error3d = error
+
+    threading.Thread(target=build, daemon=True).start()
+
+
+def play3d_url(port):
+    return launcher_url(port) + "play3d"
 
 
 def launcher_url(port, autostart=False):
@@ -141,6 +177,44 @@ class Handler(BaseHTTPRequestHandler):
             ensure_web_session(self.server)
             self._send(200, PLAY_HTML.replace("__TOKEN__", TOKEN))
             return
+        if path == "/play3d":
+            from .webglclient import PLAY3D_HTML
+            query = parse_qs(urlparse(self.path).query)
+            weather = (query.get("weather") or [None])[0]
+            day = (query.get("day") or [None])[0]
+            try:
+                day_t = float(day) if day is not None else None
+            except ValueError:
+                day_t = None
+            ensure_web_session3d(self.server, weather, day_t)
+            self._send(200, PLAY3D_HTML.replace("__TOKEN__", TOKEN))
+            return
+        if path in ("/api/scene3d", "/api/state3d"):
+            server = self.server
+            session = server.web_session3d
+            if session is not None:
+                payload = (session.scene() if path == "/api/scene3d"
+                           else session.state())
+            elif server.web_error3d:
+                payload = {"status": "error", "message": server.web_error3d}
+            else:
+                payload = {"status": "loading"}
+            self._send(200, json.dumps(payload), "application/json")
+            return
+        if path in ("/api/world3d", "/api/models3d"):
+            server = self.server
+            session = server.web_session3d
+            if session is not None:
+                payload = (session.world_bundle() if path == "/api/world3d"
+                           else session.model_bundle())
+                payload = dict(payload)
+                payload["status"] = "ready"
+            elif server.web_error3d:
+                payload = {"status": "error", "message": server.web_error3d}
+            else:
+                payload = {"status": "loading"}
+            self._send(200, json.dumps(payload), "application/json")
+            return
         if path in ("/api/frame", "/api/state"):
             server = self.server
             session = server.web_session
@@ -169,7 +243,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        if path not in ("/start", "/api/input"):
+        if path not in ("/start", "/api/input", "/api/input3d"):
             self._send(404, "Not found")
             return
         if self.headers.get("X-Aldervale-Token") != TOKEN:
@@ -185,8 +259,9 @@ class Handler(BaseHTTPRequestHandler):
                                         "message": "bad request"}),
                        "application/json")
             return
-        if path == "/api/input":
-            session = self.server.web_session
+        if path in ("/api/input", "/api/input3d"):
+            session = (self.server.web_session if path == "/api/input"
+                       else self.server.web_session3d)
             if session is None:
                 self._send(409, json.dumps({"ok": False,
                                             "message": "game is loading"}),
@@ -241,10 +316,15 @@ def serve(port=8765, open_browser=False, autostart=False, open_play=False):
     server.web_building = False
     server.web_error = None
     server.web_lock = threading.Lock()
+    server.web_session3d = None
+    server.web_building3d = False
+    server.web_error3d = None
+    server.web_lock3d = threading.Lock()
     actual = server.server_address[1]
-    target = play_url(actual) if open_play else launcher_url(actual, autostart)
+    target = play3d_url(actual) if open_play else launcher_url(actual, autostart)
     print("launcher: %s  (Ctrl+C to stop)" % launcher_url(actual))
-    print("launcher: browser game at %s" % play_url(actual))
+    print("launcher: 3D browser game at %s" % play3d_url(actual))
+    print("launcher: pixel browser game at %s" % play_url(actual))
     if open_browser:
         webbrowser.open_new_tab(target)
     try:
@@ -254,6 +334,9 @@ def serve(port=8765, open_browser=False, autostart=False, open_play=False):
     finally:
         server.shutdown()
         session = getattr(server, "web_session", None)
+        if session is not None:
+            session.close()
+        session = getattr(server, "web_session3d", None)
         if session is not None:
             session.close()
         server.server_close()
@@ -285,7 +368,7 @@ button,.buttons a{border:1px solid var(--line);border-radius:6px;
        padding:14px 26px;background:#0e1420;color:var(--ink);font:inherit;
        font-size:15px;cursor:pointer;letter-spacing:.08em;display:inline-block;
        text-decoration:none}
-button.primary{border-color:var(--gold);color:var(--gold);
+button.primary,.buttons a.primary{border-color:var(--gold);color:var(--gold);
                background:#161b26}
 .buttons a.web{border-color:var(--green);color:var(--green);
                background:#161b26}
@@ -308,13 +391,14 @@ kbd{color:var(--ink);border:1px solid var(--line);border-radius:3px;
 <body>
 <main>
   <h1>ALDERVALE</h1>
-  <p class="sub">a tale of steel and starlight, told in ASCII cells</p>
+  <p class="sub">a tale of steel and starlight . GPU 3D in the browser, ASCII in the terminal</p>
   <div class="buttons">
-    <button class="primary" data-mode="play">START GAME</button>
+    <a class="web primary" href="/play3d" target="_blank" rel="noopener">PLAY GRAPHICS 3D</a>
+    <a class="web" href="/play" target="_blank" rel="noopener">PLAY PIXEL</a>
+    <button data-mode="play">START GAME (TERMINAL)</button>
     <button data-mode="demo">WATCH DEMO</button>
-    <a class="web" href="/play" target="_blank" rel="noopener">PLAY IN BROWSER</a>
   </div>
-  <p id="status">Ready. Starting opens the game in a new terminal window.</p>
+  <p id="status">Ready. PLAY GRAPHICS 3D opens the GPU build; PLAY PIXEL is the fallback.</p>
   <div class="links">
     <a href="/studio/" target="_blank" rel="noopener">Open Studio</a>
     <a href="/health" target="_blank" rel="noopener">Health</a>

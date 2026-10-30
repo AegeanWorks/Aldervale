@@ -1,250 +1,265 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-shared-step-v1",
+    "task_id": "aldervale-gpu-hud-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1792940251.9043283,
-    "owner": "kilo:review",
-    "started_by": "kilo:review",
+    "updated_at": 1793376824.3487356,
+    "owner": "opencode:gfx",
+    "started_by": "opencode:gfx",
     "continuations": [],
-    "completed_at": 1792940252.1590464
+    "completed_at": 1793376825.743786
   },
   "checkpoints": [
     {
-      "task_id": "aldervale-weather-v1",
+      "task_id": "aldervale-gpu-atmosphere-v1",
       "phase": "phase 4",
       "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 141 tests (59.7s), hygiene, guidelines/map and secrets pass 4/4. Inspection writes 19 images (17 scenes + sprite/portrait sheets) and 17/17 control checks at 132x60, 80x40 and 40x20; rain/snow scenes included in all Studio pages. Benchmarks 24.4 ms/frame at 132x60 (~41 fps uncapped, 30 fps cap), boot 7.6s. Weather is verified structurally (overlay glyph counts, HUD rows intact, active quest) and visually available to a human via .inspect/index.html; no aesthetic rating is claimed under G-003. README and ADR-020 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "description": "[3/3] Phase 4 green: 190 tests (75.9s), hygiene, guidelines/map and secrets pass 4/4. GPU atmosphere shipped: 1024x1024 directional shadow map with a front-face-culled terrain depth pass, 4-tap PCF, bias and normal offset; star points and a moon in the night sky; GPU rain streaks and snow dots driven by world weather; /play3d?weather=rain&day=0.8 seeds a preview session. Live Edge captures verified day shadows, night stars/moon, and rain at night; model night tint no longer double-darkens. README and ADR-030 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792850374.4226258,
-      "timestamp_str": "2026-10-24 16:59:34"
+      "timestamp": 1793370435.1869032,
+      "timestamp_str": "2026-10-30 17:27:15",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-weather-v1",
+      "task_id": "aldervale-gpu-atmosphere-v1",
       "phase": "completed",
       "phase_num": 5,
-      "description": "Task 'aldervale-weather-v1' completed successfully.",
+      "description": "Task 'aldervale-gpu-atmosphere-v1' completed successfully.",
       "status": "completed",
-      "timestamp": 1792850374.6068747,
-      "timestamp_str": "2026-10-24 16:59:34"
+      "timestamp": 1793370441.3604512,
+      "timestamp_str": "2026-10-30 17:27:21",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-web-launcher-v1",
+      "task_id": "aldervale-gpu-lights-v1",
       "phase": "phase 2",
       "phase_num": 2,
-      "description": "[1/2] Web-based Start button: localhost-only stdlib HTTP launcher with a branded page, token-protected /start, fixed play/demo commands, Windows new-console spawn, Studio served at /studio/ with traversal guards, port validation and error triads. [2/2] End-to-end verification in Edge (Start spawned a real game process; Studio served 8 models), HTTP/unit/CLI tests, README/ADR-022, Phase 4.",
+      "description": "[1/2] GPU lighting and surface pass: six nearest point lights from fires/torches/shrines/windows, water shoreline foam sampled from the height texture, and a three-octave drifting cloud layer. [2/2] Tests, README/ADR-031, full gates.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792854381.708486,
-      "timestamp_str": "2026-10-24 18:06:21",
+      "timestamp": 1793371334.463111,
+      "timestamp_str": "2026-10-30 17:42:14",
+      "agent": "opencode:gfx",
       "impact_assessment": {
-        "why": "The user asked for a web-based start button; browsers cannot spawn local processes directly, and a full in-browser game server is a much larger change. A localhost launcher starts the real game honestly and links the Studio.",
-        "benefits": "One local page covers Start Game, Watch Demo and the browser Studio; no Python dependency; the game still runs natively with full input performance.",
-        "risks": "contract: new --serve/--open flags and localhost HTTP surface; security: arbitrary process spawn if unguarded; dependency: none; concurrency: ThreadingHTTPServer can field parallel /start calls, so repeated clicks can open multiple games though only fixed commands are possible; state: no persisted launcher state; platform: automatic terminal launch is Windows-only.",
-        "mitigation": "Localhost bind, random per-process token on every launch, fixed command list, no request-supplied paths/args, traversal-guarded Studio file serving, port validation, HTTP/unit tests and a real Edge click that spawned and then stopped the game process."
+        "why": "Night fires and windows were dark and the water/sky were still flat planes; point lights, foam and clouds complete the GPU atmosphere without changing simulation.",
+        "benefits": "Warmer readable night scenes, grounded water edges and a living sky, all from existing world data and a bounded six-light loop.",
+        "risks": "contract: none; dependency: none; concurrency: none; state: none; performance: six-light loops and water height sampling add fragment cost; visual: over-bright point lights can wash out the scene.",
+        "mitigation": "Cap lights at six, use quadratic falloff with a small night power, reduce radii, reuse the existing height texture, and verify day/night/rain captures."
       }
     },
     {
-      "task_id": "aldervale-web-launcher-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "Shipped launcher.py: ThreadingHTTPServer on 127.0.0.1 with a branded START GAME/WATCH DEMO page, random token required on POST /start, fixed argv (never request-supplied), Windows CREATE_NEW_CONSOLE launch, Studio served from .inspect under /studio/ with flat-name traversal guards, health and favicon endpoints, and --serve/--open/port validation in the CLI. End-to-end verified in Edge: the page rendered, the Start click returned success and spawned real PID 20944 (then stopped), and /studio/ served the Studio with all 8 models. The hygiene gate flagged the intentional detached Popen, webbrowser.open and silent Ctrl+C; fixed with an explicit hygiene rationale, open_new_tab, and a stop message.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792854412.2987766,
-      "timestamp_str": "2026-10-24 18:06:52"
-    },
-    {
-      "task_id": "aldervale-web-launcher-v1",
+      "task_id": "aldervale-gpu-lights-v1",
       "phase": "phase 4",
       "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 151 tests (56.8s), hygiene, guidelines/map and secrets pass 4/4 after fixing the launcher hygiene findings. End-to-end: --serve on 127.0.0.1:8791 rendered the launcher page (START GAME / WATCH DEMO / Open Studio / Health), the Start click in headless Edge returned 'Game launched in a new console window' and spawned a real python -m aldervale process (PID 20944, stopped after verification), and /studio/ served the Studio with 8 models. Screenshots shot-launcher.png and shot-studio-served.png captured. Security: localhost bind, per-process token on /start, fixed commands, traversal-guarded Studio files, port validation; --open without --serve and bad ports fail with triads. Benchmark 20.5 ms/frame at 132x60, boot 6.7s. README and ADR-022 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "description": "[2/2] Phase 4 green: 190 tests (69.5s), hygiene, guidelines/map and secrets pass 4/4. GPU lights/water/sky shipped: six nearest point lights warm terrain and models at night, the water shader adds depth-based shoreline foam, and the sky has a drifting three-octave cloud layer. Live headless captures verify day, night/rain and the new fire/window pools; point-light power and radii were tuned down after the first night capture washed out. README and ADR-031 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792854438.7891388,
-      "timestamp_str": "2026-10-24 18:07:18"
+      "timestamp": 1793371419.2805953,
+      "timestamp_str": "2026-10-30 17:43:39",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-web-launcher-v1",
+      "task_id": "aldervale-gpu-lights-v1",
       "phase": "completed",
       "phase_num": 5,
-      "description": "Task 'aldervale-web-launcher-v1' completed successfully.",
+      "description": "Task 'aldervale-gpu-lights-v1' completed successfully.",
       "status": "completed",
-      "timestamp": 1792854438.9703553,
-      "timestamp_str": "2026-10-24 18:07:18"
+      "timestamp": 1793371419.5466657,
+      "timestamp_str": "2026-10-30 17:43:39",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-one-click-v1",
+      "task_id": "aldervale-gpu-surface-v1",
       "phase": "phase 2",
       "phase_num": 2,
-      "description": "[1/2] True one-click start: --autostart (with --serve) opens the launcher at ?autostart=1; the page strips the query, sets a one-shot session guard and launches the game automatically. Add PLAY_WEB.bat (Windows double-click) and play_web.sh, plus idempotent serve (health check reopens the page instead of failing). [2/2] Add a 2-second server-side duplicate-launch guard, HTTP/unit/CLI tests, README/ADR-023, and Phase 4.",
+      "description": "[1/3] Terrain material detail: material id in the colour alpha, shader grain for sand/grass/forest/road/rock/snow, flower flecks, wet and snow response. [2/3] Graphical minimap built from the height/colour bundle with water, roads, entity dots and a gold player marker; suppress the ASCII map in the GPU HUD. [3/3] Tests, README/ADR-032 and full gates.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792859600.2900062,
-      "timestamp_str": "2026-10-24 19:33:20",
+      "timestamp": 1793371891.4147484,
+      "timestamp_str": "2026-10-30 17:51:31",
+      "agent": "opencode:gfx",
       "impact_assessment": {
-        "why": "The web Start button still needed a terminal command first; the user asked for one-click start, and launching a second server on the same port failed instead of reopening the page.",
-        "benefits": "Double-clicking PLAY_WEB.bat starts the launcher, opens the browser and starts the real native game with no further click; reloads and double-clicks cannot spawn duplicate games; a second launch just reopens the page.",
-        "risks": "contract: --autostart flag, autostart query and one-click launcher files; security: autostart only with the per-process token, localhost bind and fixed commands; dependency: none; concurrency: ThreadingHTTPServer plus a lock and a 2 s same-mode coalescing window; state: only client sessionStorage; platform: automatic terminal launch remains Windows-only, POSIX gets the page and exact command.",
-        "mitigation": "HTTP tests for page/token/duplicate coalescing/health, unit tests for URL/token/traversal, CLI tests for autostart/port/open validation, launcher-file tests, and a real Edge autostart run (status success, query stripped, session flag set)."
+        "why": "The GPU ground read as one flat texture and the ASCII minimap clashed with the 3D view; materials and a real map are the remaining visible quality gap.",
+        "benefits": "Distinct ground materials, weather response and a useful overhead map, all from data already sent to the browser.",
+        "risks": "contract: the colour texture alpha now carries a material id; dependency: none; concurrency: none; state: none; performance: one offscreen canvas and a little extra fragment math; visual: grain and wet/snow response could look noisy or wash out the palette.",
+        "mitigation": "Keep the alpha consumer inside the GPU terrain shader, build the minimap once per world bundle, cap detail amplitudes, and verify day/night/rain captures before the gate."
       }
     },
     {
-      "task_id": "aldervale-one-click-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "Shipped one-click start: --autostart (requires --serve) opens the launcher at /?autostart=1; the page strips the query, sets sessionStorage guard, and POSTs the token-protected play request. serve() health-checks the port and, if a launcher already owns it, only reopens the browser. Added a 2 s same-mode duplicate-launch lock so double-clicks/reloads cannot spawn two games. Added PLAY_WEB.bat (Windows double-click: serve + browser + autostart) and play_web.sh, plus README tree and ADR-023. Verified in Edge: /?autostart=1 returned 'Game launched in a new console window', history lost the query, and the one-shot flag was set; earlier Start-path verification had already spawned a real game process. HTTP tests cover token rejection, duplicate coalescing, health; unit/CLI tests cover URL helpers, traversal, autostart/port/open validation and launcher files.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792859683.0864377,
-      "timestamp_str": "2026-10-24 19:34:43"
-    },
-    {
-      "task_id": "aldervale-one-click-v1",
+      "task_id": "aldervale-gpu-surface-v1",
       "phase": "phase 4",
       "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 155 tests (86.8s under load), hygiene, guidelines/map and secrets pass 4/4. One-click verified in Edge: /?autostart=1 launched via token, status 'Game launched in a new console window', URL query stripped and sessionStorage guard set; service idempotence and duplicate coalescing covered by HTTP tests; PLAY_WEB.bat/play_web.sh checked by launcher tests. Benchmark 26.2 ms/frame at 132x60 (~38 fps uncapped, 30 fps cap), boot 8.4s. README documents PLAY_WEB.bat, --autostart, idempotent serve and the Windows-only automatic launch; ADR-023 records the design. No aesthetic rating is claimed (G-003). checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "description": "[3/3] Phase 4 green: 190 tests (72.5s), hygiene, guidelines/map and secrets pass 4/4. GPU surface shipped: terrain material ids in the colour alpha drive sand ripple, grass/forest grain, flower flecks, road stones, rock strata and snow cover; wet rain darkens the ground and snow whitens it. The GPU HUD draws an offscreen terrain minimap with water, roads, entity dots and a gold player marker, and suppresses the ASCII map. Tests pin the material alpha, scene fields, show_map toggle and minimap hooks. Live Edge captures verified day, daylight rain, daylight snow, night rain and night snow. README and ADR-032 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792859717.4929473,
-      "timestamp_str": "2026-10-24 19:35:17"
+      "timestamp": 1793372228.4688053,
+      "timestamp_str": "2026-10-30 17:57:08",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-one-click-v1",
+      "task_id": "aldervale-gpu-surface-v1",
       "phase": "completed",
       "phase_num": 5,
-      "description": "Task 'aldervale-one-click-v1' completed successfully.",
+      "description": "Task 'aldervale-gpu-surface-v1' completed successfully.",
       "status": "completed",
-      "timestamp": 1792859717.7146134,
-      "timestamp_str": "2026-10-24 19:35:17"
+      "timestamp": 1793372228.9505725,
+      "timestamp_str": "2026-10-30 17:57:08",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-web-edition-v1",
+      "task_id": "aldervale-gpu-weather-response-v1",
       "phase": "phase 2",
       "phase_num": 2,
-      "description": "[1/3] Browser edition on the same engine: WebGame + WebTerm, 20 fps session thread, chars/colour frames, canvas client with keyboard/mouse, token-protected input, lazy 9 s forge, idle pause, separate web save. [2/3] Launcher integration: /play, /api/frame, /api/state, /api/input, PLAY IN BROWSER, --open-play; PLAY_WEB.bat/play_web.sh open the browser game directly while PLAY.bat/terminal stays unchanged. [3/3] Verify live in Edge (canvas, movement, menus, save/continue), add unit/HTTP tests, README/ADR-024, Phase 4.",
+      "description": "[1/3] Weather-aware models: rain darkens figures and roofs with a wet sheen; snow caps up-facing surfaces, excluding fire and torch flames. [2/3] Water shading: fresnel sky reflection, sun glint, and rain ripple rings. [3/3] Flickering fire/torch/window point lights, tests, README/ADR-033 and full gates.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792864245.895628,
-      "timestamp_str": "2026-10-24 20:50:45",
-      "agent": "unidentified",
+      "timestamp": 1793372381.7807653,
+      "timestamp_str": "2026-10-30 17:59:41",
+      "agent": "opencode:gfx",
       "impact_assessment": {
-        "why": "The user clarified they wanted the game itself in both the browser and the current terminal; a launcher/Studio alone did not satisfy that.",
-        "benefits": "The browser runs the real Python game with no duplicated logic and no new dependency; the terminal build remains the canonical experience, and both share worlds, HUD, weather and saves per slot.",
-        "risks": "contract: new /play, /api/frame, /api/state and /api/input endpoints plus --open-play; security: /api/input is token-protected and the server binds localhost, while frame/state reads are local-only and unauthenticated; dependency: none; concurrency: a 20 fps session thread guarded by an RLock, one shared session across tabs; state: web saves go to saves/aldervale_web.json and the terminal save is untouched; resource: the session pauses after 20 s without polling.",
-        "mitigation": "Live Playwright verification of canvas size/render time/movement/menus/save/continue, HTTP tests for frame/state/input/auth, unit tests for WebTerm and frame encoding, 162 tests and 4/4 gates, separate save slot and idle pause."
+        "why": "Snow now covers the ground but not the buildings or characters, wet models look dry, water is a flat plane and firelight is static; these are the remaining visible weather mismatches.",
+        "benefits": "Snow and rain read consistently across terrain and models, lakes gain depth and sun glints, and fires feel alive without changing the simulation.",
+        "risks": "contract: lights gain an 'f' field; dependency: none; concurrency: none; state: none; performance: a few extra fragment operations and per-light sin calls; visual: snow caps or wet specular can over-brighten models, and water glints can blow out.",
+        "mitigation": "Use up-facing normals with a smoothstep, dim snow by daylight, exclude flame models from caps, keep wet specular low, bound flicker arrays at six, and verify day/night rain and snow captures."
       }
     },
     {
-      "task_id": "aldervale-web-edition-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "Shipped the browser edition: webgame.py (WebTerm, encode_frame, WebGame at 20 fps, RLock input, lazy build, idle pause), /play canvas client (fit-to-window, per-colour runs, keyboard/mouse/right-drag/wheel, HUD/fps, loading forge), token-protected /api/input, /api/frame and /api/state, launcher PLAY IN BROWSER, --open-play, and PLAY_WEB.bat/play_web.sh targeting the browser directly. Web saves use saves/aldervale_web.json; the terminal build and its save are untouched. Live Edge run: ready in 9.1 s, canvas 792x660, render 3.5 ms, 20 fps, WASD moved 2.28 m, inventory opened/closed, save-and-quit created the web save, and continue resumed play. Added WebTerm/encode unit tests and frame/state/input auth HTTP tests.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792864272.1057866,
-      "timestamp_str": "2026-10-24 20:51:12",
-      "agent": "unidentified"
-    },
-    {
-      "task_id": "aldervale-web-edition-v1",
+      "task_id": "aldervale-gpu-weather-response-v1",
       "phase": "phase 4",
       "phase_num": 4,
-      "description": "[3/3] Phase 4 green: 162 tests (61.7s), hygiene, guidelines/map and secrets pass 4/4. Live Edge verification of /play: forge 9.1 s, canvas 792x660, 3.5 ms render, 20 fps, WASD moved 2.28 m, inventory opened/closed, save-and-quit wrote saves/aldervale_web.json, continue resumed play; screenshot .inspect/shot-web-play.png (183 KB). Terminal build and save are unchanged. One-click PLAY_WEB.bat/play_web.sh now open the browser edition; the launcher exposes START GAME, WATCH DEMO, PLAY IN BROWSER and Studio. Benchmark 22.7 ms/frame at 132x60, boot 7.3 s. README and ADR-024 document the dual build and the localhost/single-session limits. No aesthetic rating is claimed (G-003); the canvas and page are directly inspectable. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "description": "[3/3] Phase 4 green: 190 tests (77.2s), hygiene, guidelines/map and secrets pass 4/4. Weather-response pass shipped: rain darkens models and adds a wet sheen, snow caps up-facing roofs/shoulders with flames excluded, water adds fresnel horizon reflection, a sun glint and rain ripple rings, and scene lights carry a flicker weight applied from a per-frame CPU array. Live Edge captures verified daylight snow caps, daylight and night rain darkening, and lake water with shoreline foam and rain ripples; the wet darkening was eased from 0.80 to 0.88 so the player stays readable at night. README and ADR-033 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792864296.090289,
-      "timestamp_str": "2026-10-24 20:51:36",
-      "agent": "unidentified"
+      "timestamp": 1793373137.0379572,
+      "timestamp_str": "2026-10-30 18:12:17",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-web-edition-v1",
+      "task_id": "aldervale-gpu-weather-response-v1",
       "phase": "completed",
       "phase_num": 5,
-      "description": "Task 'aldervale-web-edition-v1' completed successfully.",
+      "description": "Task 'aldervale-gpu-weather-response-v1' completed successfully.",
       "status": "completed",
-      "timestamp": 1792864296.2806604,
-      "timestamp_str": "2026-10-24 20:51:36",
-      "agent": "unidentified"
+      "timestamp": 1793373137.3266258,
+      "timestamp_str": "2026-10-30 18:12:17",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-review-fixes-v1",
+      "task_id": "aldervale-gpu-overcast-v1",
       "phase": "phase 2",
       "phase_num": 2,
-      "description": "[1/1] Fix launcher parity, README badge/licensing/tree drift discovered by review",
+      "description": "[1/3] Weather-graded atmosphere: rain/snow shift the sky, horizon, fog colour and distance, dim the sun and flatten direct light. [2/3] Drifting cloud shadows over terrain and models; depth-graded turquoise shallows in the water. [3/3] Tests, README/ADR-034 and full gates.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792935902.115531,
-      "timestamp_str": "2026-10-25 16:45:02",
-      "agent": "kilo:review",
+      "timestamp": 1793373270.531448,
+      "timestamp_str": "2026-10-30 18:14:30",
+      "agent": "opencode:gfx",
       "impact_assessment": {
-        "why": "Review of the uncommitted aldervale work found four concrete defects: PLAY_WEB.bat assumed a 'python' on PATH while PLAY.bat falls back to the py launcher and prints a friendly install message; the README tree omitted launcher.py; COMMERCIAL.md was seeded but absent from the tree and no License section existed although LICENSE now carries the dual-licensing notice pointing at it; and the badge still linked the pre-move Aegean-E AIKit repository.",
-        "benefits": "One-click browser start works on py-launcher-only Windows machines, the documented tree matches the package, the licence notice resolves to a tracked COMMERCIAL.md, and portfolio links point at the current repository.",
-        "risks": "contract: none, docs and launcher scripts only; dependency: none; concurrency: none; state: none",
-        "mitigation": "Failing-first tests for launcher detection and README completeness, 164 tests, 4/4 gates"
+        "why": "Snow and rain still happen under a bright blue sky and hard sun, and lakes read as one flat blue; the atmosphere does not yet match the weather.",
+        "benefits": "Overcast weather looks coherent, cloud shadows add motion to the ground, and water gains readable depth at the shoreline.",
+        "risks": "contract: none; dependency: none; concurrency: none; state: none; performance: extra weather maths, fog uniforms and a cloud-shadow term per fragment; visual: overcast grading can crush contrast or make night scenes too bright.",
+        "mitigation": "Scale weather target colours by daylight, keep fog and cloud-shadow amounts bounded, centralise the palette in one JS helper, and verify day/night clear, rain, snow and lake captures."
       }
     },
     {
-      "task_id": "aldervale-review-fixes-v1",
+      "task_id": "aldervale-gpu-overcast-v1",
       "phase": "phase 4",
       "phase_num": 4,
-      "description": "[1/1] 164 tests pass, 4/4 gates green; launcher parity and README drift fixed (checklists: passed); PRINCIPLE-018 commit/push skipped because the user did not authorize a commit",
+      "description": "[3/3] Phase 4 green: 190 tests (81.9s), hygiene, guidelines/map and secrets pass 4/4. Atmosphere pass shipped: weatherEnv() grades zenith/horizon/fog, shortens fog, dims the sun, flattens direct light, hides stars/moon and raises cloud cover for rain/snow; terrain and models share a drifting cloud-shadow term; water mixes turquoise shallows by smooth bilinear height depth into deep blue, raises opacity and uses weather fog. Live Edge captures verified clear day, overcast snow day, overcast rain day, night rain without stars, and a lake with smooth turquoise shallows and a sun glint; the first lake capture exposed blocky seabed patches, fixed with bilinear depth and stronger water opacity. README and ADR-034 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792935907.1110027,
-      "timestamp_str": "2026-10-25 16:45:07",
-      "agent": "kilo:review"
+      "timestamp": 1793373857.2683535,
+      "timestamp_str": "2026-10-30 18:24:17",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-review-fixes-v1",
+      "task_id": "aldervale-gpu-overcast-v1",
       "phase": "completed",
       "phase_num": 5,
-      "description": "Task 'aldervale-review-fixes-v1' completed successfully.",
+      "description": "Task 'aldervale-gpu-overcast-v1' completed successfully.",
       "status": "completed",
-      "timestamp": 1792935919.950291,
-      "timestamp_str": "2026-10-25 16:45:19",
-      "agent": "kilo:review"
+      "timestamp": 1793373857.545217,
+      "timestamp_str": "2026-10-30 18:24:17",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-shared-step-v1",
+      "task_id": "aldervale-gpu-sky-v1",
       "phase": "phase 2",
       "phase_num": 2,
-      "description": "[1/2] Deliver the accumulated web edition, launcher, weather and model work; fix the browser session diverging from the terminal loop",
+      "description": "[1/2] Layered sky clouds: two drifting fbm layers plus wisps, sun-lit cloud edges and wider sun/moon halos; clear weather gets more visible clouds. [2/2] Rain lightning flash overlay, tests, README/ADR-035 and full gates.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792940103.2361393,
-      "timestamp_str": "2026-10-25 17:55:03",
-      "agent": "kilo:review",
+      "timestamp": 1793373974.3093932,
+      "timestamp_str": "2026-10-30 18:26:14",
+      "agent": "opencode:gfx",
       "impact_assessment": {
-        "why": "Review of everything uncommitted since the last push found the browser session ran its own copy of the frame step: it advanced the world while menus were open, never entered the death state (so no death screen and no respawn), never armed the victory overlay, and let mouse events queue without bound. The one-click browser launcher also lacked the documented --version fast path PLAY.bat has.",
-        "benefits": "The browser build now pauses, dies and wins exactly like the terminal; one shared step removes the duplication that caused the drift; the launcher behaves like PLAY.bat.",
-        "risks": "contract: Game.tick is a new shared entry point; dependency: none; concurrency: the 20 fps session thread calls tick under its RLock; state: no save format change; behaviour: terminal loop must stay identical",
-        "mitigation": "Direct tests for Game.tick (menu freeze, death, victory clock) and WebGame.step delegation, bounded mouse queue, live Edge run of menu/death/respawn/victory, 170 tests and 4/4 gates"
+        "why": "The clear sky still reads as a mostly empty blue gradient, and rain has no lightning; clouds and storm flashes are the remaining atmosphere gaps.",
+        "benefits": "A richer sky in clear and overcast weather, better sun/moon presence, and occasional lightning that makes rain feel like a storm.",
+        "risks": "contract: none; dependency: none; concurrency: none; state: none; performance: two extra fbm evaluations in the sky shader; visual: denser clouds can gray out clear days or wash out the horizon, and flashes can overexpose a frame.",
+        "mitigation": "Keep cloud coverage and sun-lit tint bounded, preserve the existing gradient and weather palette, make lightning rare and short, and verify clear/rain/snow captures."
       }
     },
     {
-      "task_id": "aldervale-shared-step-v1",
+      "task_id": "aldervale-gpu-sky-v1",
       "phase": "phase 4",
       "phase_num": 4,
-      "description": "[2/2] Game.tick shared by terminal and browser; bounded mouse queue; PLAY_WEB --version fast path; ADR-025; 170 tests, 4/4 gates and a live Edge run of menu freeze, death, respawn and victory (checklists: passed)",
+      "description": "[2/2] Phase 4 green: 190 tests (101.8s), hygiene, guidelines/map and secrets pass 4/4. Sky pass shipped: layered drifting fbm clouds with a high wisp layer, weather cloud bias (scattered clear / overcast rain-snow), sun-lit cloud tint, detail and horizon shading, wider sun/moon halos, and a rare double-pulse rain lightning overlay via lightningAt() and uFlash. Cloud frequency and opacity were tuned twice from captures to avoid vertical bands and oversized flat blobs. Live Edge captures verified clear day puffs, overcast rain and snow skies, and a night clear sky with stars and a moon halo; lightning is wired and compiled but the still captures did not catch a flash. README and ADR-035 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
       "files_affected": [],
       "status": "in_progress",
-      "timestamp": 1792940251.9043283,
-      "timestamp_str": "2026-10-25 17:57:31",
-      "agent": "kilo:review"
+      "timestamp": 1793374741.5802727,
+      "timestamp_str": "2026-10-30 18:39:01",
+      "agent": "opencode:gfx"
     },
     {
-      "task_id": "aldervale-shared-step-v1",
+      "task_id": "aldervale-gpu-sky-v1",
       "phase": "completed",
       "phase_num": 5,
-      "description": "Task 'aldervale-shared-step-v1' completed successfully.",
+      "description": "Task 'aldervale-gpu-sky-v1' completed successfully.",
       "status": "completed",
-      "timestamp": 1792940252.1590474,
-      "timestamp_str": "2026-10-25 17:57:32",
-      "agent": "kilo:review"
+      "timestamp": 1793374741.9112353,
+      "timestamp_str": "2026-10-30 18:39:01",
+      "agent": "opencode:gfx"
+    },
+    {
+      "task_id": "aldervale-gpu-hud-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Structured HUD status in the scene JSON: name, level, gold, HP, stamina, XP, potions, weapon/armor and quest. [2/3] Graphical status panel in the GPU client; suppress the ASCII bottom status rows while keeping messages, location plate and minimap; simplify the page header. [3/3] Tests, README/ADR-036 and full gates.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793376001.4733999,
+      "timestamp_str": "2026-10-30 19:00:01",
+      "agent": "opencode:gfx",
+      "impact_assessment": {
+        "why": "The 3D scene is polished but its main status block is still five rows of ASCII text, which reads as a terminal overlay rather than a game HUD.",
+        "benefits": "Readable bars and gear/quest text, a cleaner view, and the same simulation data driving both the terminal and GPU HUDs.",
+        "risks": "contract: the scene JSON gains a status object; dependency: none; concurrency: none; state: none; performance: a few text/rect draws per frame; visual: the panel must fit the existing bottom scrim, not hide messages, and fall back to ASCII on small stages.",
+        "mitigation": "Only draw the panel when the server marks the status visible and the stage is at least 12.5px per row; skip exactly the five status rows; keep messages above the panel; test payload fields and live captures."
+      }
+    },
+    {
+      "task_id": "aldervale-gpu-hud-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Phase 4 green: 190 tests (162.4s), hygiene, guidelines/map and secrets pass 4/4. Graphical GPU HUD shipped: scene JSON sends hud_status (name, level, gold, HP/STA/XP, potions, weapon/armor, quest), the browser draws a compact/full status panel in the five-row scrim area, suppresses exactly those ASCII rows during play, keeps messages/location/minimap and falls back to ASCII below 11px per row or in modal states. Added the payload/page tests, README and ADR-036; hud_status is separate from the existing status:ready field. Live captures verified the full panel at 1600x1000, the ASCII fallback at 1200x800, and the inventory modal without the panel. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793376824.3487356,
+      "timestamp_str": "2026-10-30 19:13:44",
+      "agent": "opencode:gfx"
+    },
+    {
+      "task_id": "aldervale-gpu-hud-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-gpu-hud-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793376825.7437892,
+      "timestamp_str": "2026-10-30 19:13:45",
+      "agent": "opencode:gfx"
     }
   ]
 }

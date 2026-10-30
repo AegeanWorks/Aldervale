@@ -58,11 +58,20 @@ class ScriptedTerm:
 
 
 def build_game(seed=7, width=132, height=60, terrain_size=None,
-               atlas_keys=None):
+               atlas_keys=None, gfx=False, gfx_size=(288, 162),
+               render_mode=None):
     """Create a booted, headless Game ready for rendering or probing."""
-    game = Game(seed=seed, width=width, height=height, save_path=os.devnull)
+    game = Game(seed=seed, width=width, height=height, save_path=os.devnull,
+                gfx=gfx, gfx_size=gfx_size, render_mode=render_mode)
     game.term = None
-    game.atlas = SpriteAtlas().build(keys=atlas_keys)
+    if game.render_mode == "webgl":
+        from .webglscene import MeshAtlas
+        game.atlas = MeshAtlas().build(keys=atlas_keys)
+    elif game.render_mode == "pixel":
+        from .gfxatlas import PixelAtlas
+        game.atlas = PixelAtlas().build(keys=atlas_keys)
+    else:
+        game.atlas = SpriteAtlas().build(keys=atlas_keys)
     game.world = World(seed, game.atlas, terrain_size=terrain_size)
     game._open_screen()
     game._ensure_camera()

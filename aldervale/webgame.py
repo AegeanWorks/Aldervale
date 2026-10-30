@@ -1,10 +1,12 @@
 """Browser play client: a localhost thin client over the real Python engine.
 
-The browser sends key/mouse state and draws a canvas from char/colour frames
-produced by the existing Game. The terminal build is unchanged; this module is
-only the web transport and the canvas renderer. No external dependency is used.
+The browser sends key/mouse state and draws a canvas from truecolor pixel frames
+plus the text HUD produced by the existing Game. The terminal build is
+unchanged; this module is only the web transport and the canvas renderer. No
+external dependency is used.
 """
 
+import base64
 import json
 import threading
 import time
@@ -22,10 +24,21 @@ MOUSE_KINDS = frozenset(("ldown", "rdown", "up", "move", "wheel"))
 MAX_QUEUED_MOUSE = 64
 
 
-def encode_frame(screen):
-    """Rows of glyphs plus packed RGB colours for the canvas client."""
-    return {"chars": ["".join(row) for row in screen.chars],
+def encode_frame(screen, pixels=None):
+    """Rows of glyphs plus packed RGB colours for the canvas client.
+
+    When ``pixels`` is a graphics FrameBuffer its column-major truecolor bytes
+    are base64-encoded; the client transposes them into an ImageData.
+    """
+    data = {"chars": ["".join(row) for row in screen.chars],
             "colors": [[int(c) for c in row] for row in screen.fg]}
+    if pixels is not None:
+        data["gfx"] = {
+            "w": pixels.w,
+            "h": pixels.h,
+            "rgb": base64.b64encode(bytes(pixels.data)).decode("ascii"),
+        }
+    return data
 
 
 class WebTerm:
@@ -80,13 +93,21 @@ def _clean_mouse(events):
 class WebGame:
     """One live session: Game + WebTerm + a 20 fps simulation thread."""
 
-    def __init__(self, seed=7, width=132, height=60):
+    def __init__(self, seed=7, width=132, height=60, gfx=True,
+                 gfx_size=(288, 162), render_mode=None):
         self.width = width
         self.height = height
-        self.game = build_game(seed=seed, width=width, height=height)
+        if render_mode is None:
+            render_mode = "pixel" if gfx else "ascii"
+        self.render_mode = render_mode
+        self.gfx = render_mode == "pixel"
+        self.game = build_game(seed=seed, width=width, height=height,
+                               gfx=self.gfx, gfx_size=gfx_size,
+                               render_mode=render_mode)
         self.game.save_path = str(
             Path(__file__).resolve().parent.parent / "saves" /
-            "aldervale_web.json")
+            ("aldervale_web3d.json" if render_mode == "webgl"
+             else "aldervale_web.json"))
         self.term = WebTerm(width, height)
         self.game.term = self.term
         self.game.state = "play"
@@ -95,7 +116,11 @@ class WebGame:
         self.lock = threading.RLock()
         self.running = True
         self.seq = 0
-        self.frame = encode_frame(self.game.screen)
+        self.frame = None
+        if self.gfx:
+            self.frame = encode_frame(self.game.screen, self.game.frame)
+        self._world_bundle = None
+        self._model_bundle = None
         self.last_poll = time.monotonic()
         self.thread = threading.Thread(target=self._loop, daemon=True)
         self.thread.start()
@@ -123,18 +148,51 @@ class WebGame:
         """Latest frame plus a small state header; marks the client alive."""
         with self.lock:
             self.last_poll = time.monotonic()
-            return {"status": "ready", "seq": self.seq,
-                    "w": self.width, "h": self.height,
-                    "frame": self.frame, "state": self.game.state,
-                    "weather": self.game.world.weather,
-                    "day_t": round(self.game.world.day_t, 3),
-                    "player": self._player()}
+            payload = {"status": "ready", "seq": self.seq,
+                       "w": self.width, "h": self.height,
+                       "gfx": bool(self.frame and self.frame.get("gfx")),
+                       "state": self.game.state,
+                       "weather": self.game.world.weather,
+                       "day_t": round(self.game.world.day_t, 3),
+                       "player": self._player()}
+            if self.frame is not None:
+                payload["frame"] = self.frame
+            else:
+                payload["render_mode"] = self.render_mode
+            return payload
+
+    def scene(self):
+        """Per-tick WebGL scene: camera, entities and HUD text."""
+        from .webglscene import scene as encode_scene
+        with self.lock:
+            self.last_poll = time.monotonic()
+            if self.game._last_env is None:
+                from .render import Env
+                self.game._last_env = Env(self.game.world.day_t,
+                                          self.game.world.time)
+            return encode_scene(self.game, self.game.world, self.seq)
+
+    def world_bundle(self):
+        from .webglscene import world_bundle
+        with self.lock:
+            if self._world_bundle is None:
+                self._world_bundle = world_bundle(self.game.world)
+            return self._world_bundle
+
+    def model_bundle(self):
+        from .webglscene import model_bundle
+        with self.lock:
+            if self._model_bundle is None:
+                self._model_bundle = model_bundle(self.game.atlas)
+            return self._model_bundle
 
     def state(self):
         """Diagnostics for tests and the agent; does not count as a client poll."""
         with self.lock:
             return {"status": "ready", "seq": self.seq,
                     "state": self.game.state,
+                    "gfx": bool(self.frame and self.frame.get("gfx")),
+                    "render_mode": self.render_mode,
                     "weather": self.game.world.weather,
                     "day_t": round(self.game.world.day_t, 3),
                     "player": self._player()}
@@ -149,7 +207,9 @@ class WebGame:
             self.game._handle_keys()
             env = self.game.tick(DT)
             self.game._render(env)
-            self.frame = encode_frame(self.game.screen)
+            if getattr(self, "gfx", True):
+                self.frame = encode_frame(self.game.screen,
+                                          getattr(self.game, "frame", None))
             self.seq += 1
 
     def _loop(self):
@@ -188,7 +248,7 @@ h1{font-size:16px;letter-spacing:.22em;color:var(--gold);margin:0}
 #stage{position:relative;margin-top:14px;display:flex;align-items:center;
        justify-content:center;min-height:240px}
 canvas{background:#05070a;border:1px solid var(--line);outline:none;
-       image-rendering:auto;display:block}
+       image-rendering:pixelated;display:block}
 #loading{position:absolute;inset:0;display:flex;align-items:center;
          justify-content:center;background:rgba(5,7,10,.82);
          color:var(--gold);font-size:14px;letter-spacing:.14em;text-align:center;
@@ -220,7 +280,7 @@ kbd{border:1px solid var(--line);border-radius:3px;padding:1px 5px;
   <span>click to walk/attack . right-drag to look . wheel to zoom</span>
   <span><a href="/studio/" target="_blank" rel="noopener">Studio</a></span>
   <span><a href="/">Launcher</a></span>
-  <span class="note">localhost thin client over the same Python engine</span>
+  <span class="note">pixel graphics on the same Python engine . the terminal build is ASCII</span>
 </footer>
 <script>
 const TOKEN = "__TOKEN__";
@@ -236,6 +296,10 @@ let pressed = [];
 let mouse = [];
 let dragging = false;
 let framesThisSecond = 0, fps = 0, fpsAt = performance.now();
+const off = document.createElement("canvas");
+const offctx = off.getContext("2d");
+const MODAL = new Set(["title", "inventory", "help", "pause", "shop",
+                       "dialogue", "dead"]);
 
 function hex(c){ return "#" + c.toString(16).padStart(6, "0"); }
 
@@ -244,14 +308,42 @@ function showLoading(text){
   loadingEl.textContent = text;
 }
 
-function render(){
-  if (!frame) return;
-  const started = performance.now();
+function decodeGfx(gfx){
+  const bin = atob(gfx.rgb);
+  const raw = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) raw[i] = bin.charCodeAt(i);
+  return {w: gfx.w, h: gfx.h, raw: raw};
+}
+
+function drawGfx(cssW, cssH){
+  const g = frame.gfx;
+  const gw = g.w, gh = g.h, raw = g.raw;
+  if (off.width !== gw || off.height !== gh){
+    off.width = gw;
+    off.height = gh;
+  }
+  const img = offctx.createImageData(gw, gh);
+  const d = img.data;
+  for (let x = 0; x < gw; x++){
+    let so = x * gh * 3;
+    for (let y = 0; y < gh; y++, so += 3){
+      const q = (y * gw + x) * 4;
+      d[q] = raw[so];
+      d[q + 1] = raw[so + 1];
+      d[q + 2] = raw[so + 2];
+      d[q + 3] = 255;
+    }
+  }
+  offctx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(off, 0, 0, gw, gh, 0, 0, cssW, cssH);
+}
+
+function drawTextGrid(cssW, cssH, shadow){
   const w = frame.w, h = frame.h;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = "#05070a";
-  ctx.fillRect(0, 0, w * cellW, h * cellH);
-  ctx.font = Math.floor(cellH * 0.92) + 'px "Cascadia Mono",Consolas,monospace';
+  const cw = cssW / w, ch = cssH / h;
+  ctx.font = Math.max(8, Math.floor(ch * 0.92)) +
+    'px "Cascadia Mono",Consolas,monospace';
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (let y = 0; y < h; y++){
@@ -261,15 +353,41 @@ function render(){
       const color = colors[x];
       let end = x + 1;
       while (end < w && colors[end] === color) end++;
-      ctx.fillStyle = hex(color);
+      const ink = hex(color);
       for (let i = x; i < end; i++){
-        const ch = chars[i];
-        if (ch !== " ")
-          ctx.fillText(ch, i * cellW + cellW * 0.5,
-                       y * cellH + cellH * 0.52);
+        const glyph = chars[i];
+        if (glyph === " ") continue;
+        const px = i * cw + cw * 0.5;
+        const py = y * ch + ch * 0.52;
+        if (shadow){
+          ctx.fillStyle = "rgba(3,5,9,.88)";
+          ctx.fillText(glyph, px + 1, py + 1);
+        }
+        ctx.fillStyle = ink;
+        ctx.fillText(glyph, px, py);
       }
       x = end;
     }
+  }
+}
+
+function render(){
+  if (!frame) return;
+  const started = performance.now();
+  const cssW = canvas.width / dpr, cssH = canvas.height / dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#05070a";
+  ctx.fillRect(0, 0, cssW, cssH);
+  if (frame.gfx){
+    drawGfx(cssW, cssH);
+    if (MODAL.has(frame.state)){
+      ctx.fillStyle = frame.state === "title"
+        ? "rgba(4,6,10,.38)" : "rgba(4,6,10,.62)";
+      ctx.fillRect(0, 0, cssW, cssH);
+    }
+    drawTextGrid(cssW, cssH, true);
+  } else {
+    drawTextGrid(cssW, cssH, false);
   }
   window.__renderMs = performance.now() - started;
 }
@@ -278,15 +396,30 @@ function fit(){
   if (!frame) return;
   const maxW = Math.max(320, innerWidth - 36);
   const maxH = Math.max(220, innerHeight - 190);
-  let ch = Math.floor(Math.min(maxH / frame.h, maxW / (frame.w * 0.62)));
-  ch = Math.max(7, Math.min(20, ch));
-  cellH = ch;
-  cellW = Math.max(4, Math.floor(ch * 0.62));
   dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = frame.w * cellW * dpr;
-  canvas.height = frame.h * cellH * dpr;
-  canvas.style.width = (frame.w * cellW) + "px";
-  canvas.style.height = (frame.h * cellH) + "px";
+  let cssW, cssH;
+  if (frame.gfx){
+    const aspect = frame.gfx.w / frame.gfx.h;
+    cssW = maxW;
+    cssH = Math.floor(cssW / aspect);
+    if (cssH > maxH){
+      cssH = maxH;
+      cssW = Math.floor(cssH * aspect);
+    }
+    cssW = Math.max(320, cssW);
+    cssH = Math.max(180, Math.floor(cssW / aspect));
+  } else {
+    let ch = Math.floor(Math.min(maxH / frame.h, maxW / (frame.w * 0.62)));
+    ch = Math.max(7, Math.min(20, ch));
+    cellH = ch;
+    cellW = Math.max(4, Math.floor(ch * 0.62));
+    cssW = frame.w * cellW;
+    cssH = frame.h * cellH;
+  }
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  canvas.style.width = Math.floor(cssW) + "px";
+  canvas.style.height = Math.floor(cssH) + "px";
   window.__fitted = true;
   render();
 }
@@ -315,7 +448,9 @@ async function poll(){
       if (data.seq !== lastSeq){
         lastSeq = data.seq;
         frame = {w: data.w, h: data.h, chars: data.frame.chars,
-                 colors: data.frame.colors};
+                 colors: data.frame.colors, state: data.state,
+                 seq: data.seq,
+                 gfx: data.frame.gfx ? decodeGfx(data.frame.gfx) : null};
         framesThisSecond++;
         const now = performance.now();
         if (now - fpsAt >= 1000){
@@ -324,6 +459,13 @@ async function poll(){
           fpsAt = now;
         }
         window.__frameSeq = data.seq;
+        window.__gfx = !!frame.gfx;
+        window.__frameW = frame.w;
+        window.__frameH = frame.h;
+        if (!window.__gfxLabeled){
+          statusEl.textContent = frame.gfx ? "Pixel graphics." : "ASCII cells.";
+          window.__gfxLabeled = true;
+        }
         if (!fitted){ fitted = true; fit(); } else render();
         updateHud(data);
       }

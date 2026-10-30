@@ -196,3 +196,11 @@ def save_png(path, screen, scale=2):
     with open(path, "wb") as f:
         f.write(png_bytes(width, height, rgb_rows))
     return width, height
+
+
+def save_frame(path, frame, scale=1):
+    """Write a pixel FrameBuffer to a truecolor PNG; return (width, height)."""
+    width, height, rgb_rows = frame.to_row_major(scale=scale)
+    with open(path, "wb") as f:
+        f.write(png_bytes(width, height, rgb_rows))
+    return width, height

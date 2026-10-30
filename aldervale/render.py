@@ -649,7 +649,11 @@ def _entities(screen, world, cam, env):
     vis = []
     max_d2 = MAX_DIST * MAX_DIST
     near_clip = max(1.2, cam.dist * 0.6)
-    for ent in world.entities:
+    candidates = list(world.entities)
+    player = getattr(world, "player", None)
+    if player is not None and player not in candidates:
+        candidates.append(player)
+    for ent in candidates:
         dx = ent.x - cam.x
         dz = ent.z - cam.z
         if dx * dx + dz * dz > max_d2:

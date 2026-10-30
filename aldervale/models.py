@@ -122,6 +122,10 @@ def knight(pose=None, palette=None):
     for fx in (-0.18, 0.0, 0.18):
         part(fx, 1.06, -0.266, 0.028, 0.70, 0.02, pal["trim"])
     part(0.0, 1.39, -0.19, 0.30, 0.06, 0.05, pal["gold"])
+    # A gold sun-diamond on the cloak back keeps the default third-person
+    # view readable instead of a flat navy slab.
+    part(0.0, 1.17, -0.293, 0.22, 0.22, 0.02, pal["gold"], rz=0.785)
+    part(0.0, 1.17, -0.296, 0.10, 0.10, 0.02, pal["trim"], rz=0.785)
     arm_l = p["arm_l"]
     arm_r = p["arm_r"]
     for side, ang in ((-1.0, arm_l), (1.0, arm_r)):

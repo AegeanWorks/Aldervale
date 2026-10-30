@@ -525,8 +525,7 @@ def draw_title(screen, world, cam, env, menu_sel, has_save):
     if w >= logo_w + 2 and h >= 26:
         for i, line in enumerate(TITLE_LOGO):
             screen.text_centered(5 + i, line, GOLD if i < 3 else ORANGE)
-        screen.text_centered(11, "A tale of steel and starlight, told in ASCII",
-                             WHITE)
+        screen.text_centered(11, "A tale of steel and starlight", WHITE)
     else:
         screen.text_centered(max(2, h // 2 - 8), "ALDERVALE", GOLD)
         screen.text_centered(max(3, h // 2 - 6),
@@ -546,7 +545,7 @@ def draw_title(screen, world, cam, env, menu_sel, has_save):
         for px in range(max(0, start - 2), min(w, start + len(label) + 2)):
             screen.set(px, row, " ", pack_rgb(8, 11, 18))
         screen.text_centered(row, label, WHITE if i == menu_sel else GREY)
-    screen.text_centered(h - 2, fit_text("ALDERVALE v1.0 - an AIKit project",
+    screen.text_centered(h - 2, fit_text("ALDERVALE v1.2 - an AIKit project",
                                          w - 2), DIM)
     controls = wrap_text("WASD walk . SPACE attack . E talk . I bag . H help",
                          w - 4)[:2]

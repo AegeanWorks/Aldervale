@@ -13,8 +13,9 @@ from . import __version__
 def _build_parser():
     ap = argparse.ArgumentParser(
         prog="aldervale",
-        description="ALDERVALE - a 2.5D medieval RPG rendered in tiny ASCII "
-                    "cells. Zoom your terminal font out for pixel detail.")
+        description="ALDERVALE - a 2.5D medieval RPG. The browser builds "
+                    "draw WebGL2 3D or software pixel graphics; the terminal "
+                    "build renders the same world in ASCII cells.")
     ap.add_argument("--seed", type=int, default=7,
                     help="world seed (default 7)")
     ap.add_argument("--width", type=int, default=None,
@@ -30,7 +31,13 @@ def _build_parser():
     ap.add_argument("--no-color", action="store_true",
                     help="render in monochrome ramp only")
     ap.add_argument("--screenshot", metavar="PATH",
-                    help="render one vista frame to a text file and exit")
+                    help="render one ASCII vista frame to a text file and exit")
+    ap.add_argument("--gfx-shot", metavar="PATH",
+                    help="render one pixel-graphics frame to a PNG and exit")
+    ap.add_argument("--gfx-scene", default="village", metavar="NAME",
+                    help="scene for --gfx-shot (default village)")
+    ap.add_argument("--gfx-size", default="288x162", metavar="WxH",
+                    help="internal pixel resolution (default 288x162)")
     ap.add_argument("--inspect", metavar="DIR",
                     help="write scene PNGs and a control-probe report to DIR "
                          "and exit")
@@ -129,6 +136,8 @@ def run(argv=None):
                          "process using this one.")
     if args.web_shot:
         return _web_shot(args)
+    if args.gfx_shot:
+        return _gfx_shot(args)
     if args.inspect:
         from .inspect import format_summary, run_inspection
         report = run_inspection(args.inspect, seed=args.seed,
@@ -199,6 +208,45 @@ def _web_shot(args):
                      "Retry, or open %s in a browser and capture it manually."
                      % html)
     print("wrote %s" % detail)
+    return 0
+
+
+def _gfx_shot(args):
+    from .capture import save_frame
+    from .inspect import SCENES, _calm, _reset, build_game
+    from .render import Env
+
+    text = args.gfx_size.lower().replace(",", "x")
+    try:
+        width, height = (int(v) for v in text.split("x", 1))
+    except ValueError:
+        return _fail("--gfx-size must look like WxH.",
+                     "The pixel renderer needs a fixed internal resolution.",
+                     "Retry with e.g. --gfx-size 288x162.")
+    if not (160 <= width <= 960 and 90 <= height <= 540):
+        return _fail("--gfx-size is outside 160x90..960x540.",
+                     "Very small or huge internal buffers are not useful.",
+                     "Retry with e.g. --gfx-size 288x162.")
+    scenes = {name: build for name, _filename, build in SCENES}
+    build = scenes.get(args.gfx_scene)
+    if build is None:
+        return _fail("Unknown --gfx-scene '%s'." % args.gfx_scene,
+                     "The scene name selects a scripted camera position.",
+                     "Use one of: " + ", ".join(sorted(scenes)) + ".")
+    game = build_game(seed=args.seed, width=132, height=60, gfx=True,
+                      gfx_size=(width, height))
+    _calm(game)
+    _reset(game)
+    day_t = build(game)
+    game._render(Env(day_t, game.world.time))
+    try:
+        iw, ih = save_frame(args.gfx_shot, game.frame, scale=2)
+    except OSError as exc:
+        return _fail("Cannot write %s: %s" % (args.gfx_shot, exc),
+                     "The output directory does not exist or is not writable.",
+                     "Create the folder or choose another path.")
+    print("wrote %s (%dx%d internal, %dx%d png)"
+          % (args.gfx_shot, width, height, iw, ih))
     return 0
 
 

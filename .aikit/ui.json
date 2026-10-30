@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "surfaces": {
+    "app": {
+      "paths": [
+        ".inspect-mini/index.html",
+        ".inspect-small/index.html",
+        ".inspect/index.html"
+      ]
+    }
+  },
+  "protected": [
+    "tests/**"
+  ],
+  "commands": {
+    "fast": "python -m unittest discover",
+    "snapshot": ""
+  },
+  "style": {
+    "theme_paths": []
+  },
+  "limits": {
+    "max_files": 12,
+    "max_lines": 300
+  }
+}

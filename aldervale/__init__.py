@@ -1,3 +1,3 @@
-"""ALDERVALE: a 2.5D medieval RPG rendered entirely in tiny ASCII cells."""
+"""ALDERVALE: a 2.5D medieval RPG in pixel graphics and ASCII cells."""
 
-__version__ = "1.0.0"
+__version__ = "1.2.0"

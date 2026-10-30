@@ -14,7 +14,8 @@ sys.path.insert(0, ".")
 from aldervale.atlas import SpriteAtlas
 from aldervale.buffer import Screen
 from aldervale.game import Game
-from aldervale.inspect import build_game, probe_controls, run_inspection
+from aldervale.inspect import (_reset, build_game, probe_controls,
+                               run_inspection)
 from aldervale.render import Camera, Env, render_scene
 from aldervale.terrain import Terrain
 from aldervale.webgame import WebGame
@@ -504,6 +505,48 @@ class TestGameShell(unittest.TestCase):
         os.remove(g.save_path)
 
 
+class TestGfxRender(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.game = build_game(seed=7, width=132, height=60,
+                              terrain_size=SMALL, atlas_keys=[], gfx=True,
+                              gfx_size=(80, 45))
+
+    def _frame(self, day_t=0.24):
+        g = self.game
+        _reset(g)
+        vx, vz = g.world.terrain.village
+        g.world.player.x, g.world.player.z = vx, vz + 6
+        g.world.player.ground_y = g.world.terrain.height(vx, vz + 6)
+        g.world.player.yaw = math.pi
+        g.cam = None
+        g._ensure_camera()
+        g._render(Env(day_t, g.world.time))
+        return g
+
+    def test_pixel_render_writes_colour_depth_and_hud(self):
+        g = self._frame()
+        self.assertEqual((g.frame.w, g.frame.h), (80, 45))
+        colours = set()
+        for i in range(0, len(g.frame.data), 3):
+            colours.add(bytes(g.frame.data[i:i + 3]))
+            if len(colours) > 8:
+                break
+        self.assertGreater(len(colours), 8, "the frame is not blank")
+        self.assertLess(g.frame.sample_depth(40, 40), 1e8)
+        self.assertGreater(len(g.screen.depth), 40)
+        self.assertTrue(any(ch != " " for row in g.screen.chars for ch in row),
+                        "the HUD text is drawn over the pixel frame")
+        self.assertIsNotNone(g.pick_world(66, 52))
+
+    def test_night_is_darker_than_day(self):
+        day = self._frame(0.24)
+        day_sum = sum(day.frame.data)
+        night = self._frame(0.80)
+        night_sum = sum(night.frame.data)
+        self.assertLess(night_sum, day_sum * 0.75)
+
+
 class TestCliSubprocess(unittest.TestCase):
     def _run(self, *args):
         return subprocess.run(
@@ -590,6 +633,28 @@ class FakeWebSession:
         self.inputs.append((pressed, held, mouse))
 
 
+class FakeWebSession3D:
+    def scene(self):
+        return {"status": "ready", "seq": 1,
+                "camera": {"x": 0, "y": 1, "z": 2, "yaw": 0,
+                           "f": 100, "fy": 50, "w": 2, "h": 1,
+                           "horizon": 0},
+                "entities": [], "hud": {"chars": ["  "], "colors": [[0, 0]]},
+                "state": "play", "weather": "clear",
+                "player": {"hp": 46, "max_hp": 46, "stamina": 100}}
+
+    def state(self):
+        return {"status": "ready", "seq": 1, "state": "play",
+                "render_mode": "webgl"}
+
+    def world_bundle(self):
+        return {"meta": {"w": 2, "water": 1.0},
+                "heights": "", "colors": ""}
+
+    def model_bundle(self):
+        return {"meta": {}, "pos": "", "norm": "", "col": ""}
+
+
 class TestLauncherHTTP(unittest.TestCase):
     def setUp(self):
         import threading
@@ -608,6 +673,10 @@ class TestLauncherHTTP(unittest.TestCase):
         self.server.web_error = None
         self.server.web_building = False
         self.server.web_session = FakeWebSession()
+        self.server.web_lock3d = threading.Lock()
+        self.server.web_error3d = None
+        self.server.web_building3d = False
+        self.server.web_session3d = FakeWebSession3D()
         self._fake = self.server
         self.thread = threading.Thread(target=self.server.serve_forever,
                                        daemon=True)
@@ -680,6 +749,26 @@ class TestLauncherHTTP(unittest.TestCase):
         with urllib.request.urlopen(self.base + "/api/frame", timeout=5) as r:
             data = json.loads(r.read())
         self.assertEqual(data["status"], "loading")
+
+    def test_webgl_page_and_assets(self):
+        import urllib.request
+        with urllib.request.urlopen(self.base + "/play3d", timeout=5) as r:
+            page = r.read().decode()
+        self.assertEqual(r.status, 200)
+        self.assertIn("webgl2", page.lower())
+        self.assertIn(self.launcher.TOKEN, page)
+        with urllib.request.urlopen(self.base + "/api/scene3d",
+                                    timeout=5) as r:
+            data = json.loads(r.read())
+        self.assertEqual(data["status"], "ready")
+        with urllib.request.urlopen(self.base + "/api/world3d",
+                                    timeout=5) as r:
+            data = json.loads(r.read())
+        self.assertEqual(data["status"], "ready")
+        with urllib.request.urlopen(self.base + "/api/models3d",
+                                    timeout=5) as r:
+            data = json.loads(r.read())
+        self.assertEqual(data["status"], "ready")
 
     def test_page_and_token_protected_start(self):
         import urllib.error
@@ -908,7 +997,7 @@ class TestResponsiveMenus(unittest.TestCase):
             text = "\n".join(rows)
             self.assertIn("WASD walk", text,
                           "title@%d lost its control footer" % width)
-            self.assertIn("ALDERVALE v1.0", text,
+            self.assertIn("ALDERVALE v1.2", text,
                           "title@%d lost its version line" % width)
 
 

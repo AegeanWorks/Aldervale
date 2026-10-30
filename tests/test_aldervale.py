@@ -1,6 +1,8 @@
 """Unit tier: fast in-process checks for the pure engine core."""
 
 import io
+import base64
+import math
 import os
 import struct
 import sys
@@ -8,6 +10,7 @@ import tempfile
 import unittest
 import zlib
 from contextlib import redirect_stderr
+from types import SimpleNamespace
 
 sys.path.insert(0, ".")
 
@@ -16,8 +19,20 @@ from aldervale import models
 from aldervale.atlas import SpriteAtlas
 from aldervale.buffer import FAR, NEAREST, Screen, pack_rgb
 from aldervale.capture import png_bytes, save_png, screen_pixels
+from aldervale.gfx import FrameBuffer
+from aldervale.gfxatlas import PixelAtlas, bake_pixel_sprite
+from aldervale.gfxmodels import ModelRenderer
+from aldervale.gfxmodels import _raster_tri_smooth
+from aldervale.gfxrender import GfxCamera
+from aldervale.inspect import build_game
+from aldervale.webglclient import PLAY3D_HTML
+from aldervale.webglscene import (MeshAtlas as GLMeshAtlas,
+                                  model_bundle as gl_model_bundle,
+                                  scene as gl_scene,
+                                  world_bundle as gl_world_bundle)
 from aldervale.mesh import EDGE_CHARS, RAMP, MeshBuilder, bake_sprite
 from aldervale.noise import fbm, value_noise
+from aldervale.render import Camera
 from aldervale.rules import (ARMOR_ORDER, ITEMS, WEAPON_ORDER, Inventory,
                              damage_roll, xp_for_level)
 from aldervale import launcher
@@ -356,6 +371,18 @@ class TestWebGameUnit(unittest.TestCase):
         self.assertEqual(frame["chars"][0][:2], "AB")
         self.assertEqual(frame["colors"][0][0], 0x123456)
         self.assertEqual(len(frame["colors"]), 2)
+        self.assertNotIn("gfx", frame)
+
+    def test_encode_frame_carries_column_major_pixels(self):
+        s = Screen(2, 1, color=True)
+        fb = FrameBuffer(2, 1)
+        fb.fill_column(0, 0, 1, 0x010203)
+        fb.fill_column(1, 0, 1, 0x040506)
+        frame = encode_frame(s, fb)
+        self.assertEqual(frame["gfx"]["w"], 2)
+        self.assertEqual(frame["gfx"]["h"], 1)
+        raw = base64.b64decode(frame["gfx"]["rgb"])
+        self.assertEqual(raw, bytes((1, 2, 3, 4, 5, 6)))
 
     def test_web_term_queues_input_and_ignores_output(self):
         term = WebTerm(80, 40)
@@ -399,6 +426,228 @@ class TestAtlas(unittest.TestCase):
         atlas = SpriteAtlas()
         self.assertGreater(atlas.heights["castle"], 10)
         self.assertLess(atlas.heights["chicken"], 1)
+
+
+class TestGfx(unittest.TestCase):
+    def test_framebuffer_column_fill_and_depth(self):
+        fb = FrameBuffer(4, 3)
+        fb.fill_column(1, 0, 3, 0x112233, 2.5)
+        self.assertEqual(fb.sample_depth(1, 0), 2.5)
+        self.assertEqual(fb.sample_depth(1, 2), 2.5)
+        self.assertEqual(fb.sample_depth(0, 0), FAR)
+        self.assertEqual(tuple(fb.data[1 * 3 * 3:1 * 3 * 3 + 3]),
+                         (0x11, 0x22, 0x33))
+
+    def test_framebuffer_blend_and_row_major_scale(self):
+        fb = FrameBuffer(2, 2)
+        fb.set(0, 0, 0x000000)
+        fb.blend(0, 0, 0xFFFFFF, 0.5)
+        self.assertEqual(tuple(fb.data[:3]), (127, 127, 127))
+        w, h, rgb = fb.to_row_major(scale=2)
+        self.assertEqual((w, h), (4, 4))
+        self.assertEqual(rgb[:3], bytes((127, 127, 127)))
+        self.assertEqual(rgb[3:6], bytes((127, 127, 127)))
+
+    def test_bake_pixel_sprite_crops_and_sets_alpha(self):
+        mesh = MeshBuilder()
+        mesh.box(0, 0.5, 0, 1, 1, 1, 0x808080)
+        sprite = bake_pixel_sprite(mesh.build(), yaw=0.0, dist=5.0, f=40.0,
+                                   aspect=1.0, canvas=(60, 60))
+        self.assertGreater(sprite.w, 0)
+        self.assertLess(sprite.w, 60)
+        self.assertGreater(sprite.h, 0)
+        self.assertLess(sprite.h, 60)
+        self.assertGreater(sprite.filled(), 100)
+        self.assertEqual(len(sprite.rgba), sprite.w * sprite.h * 4)
+        self.assertTrue(any(sprite.rgba[i] == 255
+                            for i in range(3, len(sprite.rgba), 4)))
+
+    def test_bake_pixel_sprite_keeps_emissive_glow(self):
+        sprite = bake_pixel_sprite(models.campfire(frame=0), yaw=0.0,
+                                   dist=5.0, f=40.0, aspect=1.0,
+                                   canvas=(60, 60))
+        self.assertIsNotNone(sprite.glow)
+        self.assertGreater(sprite.glow.filled(), 0)
+
+    def test_pixel_atlas_builds_a_model_and_reports_steps(self):
+        atlas = PixelAtlas()
+        self.assertGreater(atlas.heights["castle"], 10)
+        atlas.build(keys=["chicken"])
+        row = atlas.frames[("chicken", "idle")]
+        self.assertEqual(len(row), 12)
+        self.assertEqual(atlas.steps_for("chicken", "idle"), 12)
+        sprite = atlas.get("chicken", "idle", 3)
+        self.assertGreater(sprite.filled(), 10)
+
+    def test_gfx_camera_keeps_the_cell_view_alignment(self):
+        cam = Camera(132, 60, 10.0, 20.0, 5.0, 1.2, pitch=0.3, dist=4.6)
+        gcam = GfxCamera.from_camera(cam, 320, 180)
+        self.assertAlmostEqual(gcam.f, cam.f * 320 / 132)
+        self.assertAlmostEqual(gcam.fy, cam.fy * 3)
+        self.assertEqual(gcam.w, 320)
+        self.assertEqual(gcam.h, 180)
+        self.assertLess(abs(gcam.col_angle[160]), 0.01)
+        self.assertGreater(gcam.horizon, 0)
+
+
+    def test_model_renderer_draws_real_mesh_geometry(self):
+        builder = MeshBuilder()
+        builder.box(0, 0.5, 0, 1, 1, 1, 0x808080)
+        builder.box(0.55, 0.75, 0, 0.3, 0.3, 0.3, 0xCC4444)
+        mesh = builder.build()
+
+        class CubeAtlas:
+            def mesh_for(self, model, pose):
+                return mesh
+
+        cam = Camera(132, 60, 0.0, 4.6, 2.4, math.pi, pitch=0.3,
+                     dist=4.6)
+        gcam = GfxCamera.from_camera(cam, 288, 162)
+        ent = SimpleNamespace(model="cube", pose="idle", x=0.0, z=0.0,
+                              yaw=0.0, height=1.0, scale=1.0, y_off=0.0,
+                              ground_y=0.0, flash=0.0, flash_color=None)
+        fb = FrameBuffer(288, 162)
+        renderer = ModelRenderer(CubeAtlas())
+        first = renderer.draw(fb, gcam, ent, 1.0, 1.0, 1.0)
+        self.assertGreater(first, 100)
+        self.assertLess(fb.sample_depth(144, 120), 1e8)
+        before = bytes(fb.data)
+        ent.yaw = math.pi
+        fb.clear()
+        second = renderer.draw(fb, gcam, ent, 1.0, 1.0, 1.0)
+        self.assertGreater(second, 100)
+        self.assertNotEqual(before, bytes(fb.data),
+                            "rotating the model must change the pixels")
+
+    def test_framebuffer_pattern_fill_repeats_and_sets_depth(self):
+        fb = FrameBuffer(1, 5)
+        pattern = bytes((10, 20, 30, 40, 50, 60))
+        fb.fill_column_pattern(0, 0, 5, pattern, 1.5)
+        self.assertEqual(tuple(fb.data[0:3]), (10, 20, 30))
+        self.assertEqual(tuple(fb.data[3:6]), (40, 50, 60))
+        self.assertEqual(tuple(fb.data[6:9]), (10, 20, 30))
+        self.assertEqual(fb.depth, [1.5] * 5)
+
+    def test_smooth_triangle_interpolates_the_shade_table(self):
+        fb = FrameBuffer(4, 4)
+        table = [pack_rgb(i * 12, 0, 0) for i in range(16)]
+        tri = ((0.0, 0.0, 1.0, 0.35),
+               (4.0, 0.0, 1.0, 1.0),
+               (0.0, 4.0, 1.0, 0.35))
+        written = _raster_tri_smooth(fb.data, fb.depth, 4, 4, tri, table)
+        self.assertGreater(written, 0)
+        self.assertLess(fb.sample_depth(1, 1), 1e8)
+
+    def test_model_renderer_depth_bias_composites_over_foreground(self):
+        builder = MeshBuilder()
+        builder.box(0, 0.5, 0, 1, 1, 1, 0x808080)
+        mesh = builder.build()
+
+        class CubeAtlas:
+            def mesh_for(self, model, pose):
+                return mesh
+
+        cam = Camera(132, 60, 0.0, 4.6, 2.4, math.pi, pitch=0.3,
+                     dist=4.6)
+        gcam = GfxCamera.from_camera(cam, 288, 162)
+        ent = SimpleNamespace(model="cube", pose="idle", x=0.0, z=0.0,
+                              yaw=0.0, height=1.0, scale=1.0, y_off=0.0,
+                              ground_y=0.0, flash=0.0, flash_color=None)
+        fb = FrameBuffer(288, 162)
+        for i in range(len(fb.depth)):
+            fb.depth[i] = 2.0
+        renderer = ModelRenderer(CubeAtlas())
+        self.assertEqual(renderer.draw(fb, gcam, ent, 1, 1, 1), 0,
+                         "foreground depth must hide the model without bias")
+        written = renderer.draw(fb, gcam, ent, 1, 1, 1, depth_bias=3.0)
+        self.assertGreater(written, 100)
+        self.assertGreater(fb.sample_depth(144, 120), 2.0,
+                           "the composite writes the model's real depth")
+
+    def test_pixel_atlas_exposes_meshes_for_runtime_3d(self):
+        atlas = PixelAtlas()
+        atlas.build(keys=["chicken"])
+        self.assertIsNotNone(atlas.mesh_for("chicken", "idle"))
+        self.assertIsNone(atlas.mesh_for("castle", "idle"))
+
+
+class TestWebGL(unittest.TestCase):
+    def test_model_bundle_covers_every_pose(self):
+        atlas = GLMeshAtlas().build(keys=["knight"])
+        bundle = gl_model_bundle(atlas)
+        entry = bundle["meta"]["knight"]["idle"]
+        self.assertGreater(entry["count"], 100)
+        pos = base64.b64decode(bundle["pos"])
+        col = base64.b64decode(bundle["col"])
+        norm = base64.b64decode(bundle["norm"])
+        total = sum(pose["count"]
+                    for poses in bundle["meta"].values()
+                    for pose in poses.values())
+        self.assertEqual(len(pos), total * 3 * 4)
+        self.assertEqual(len(col), total * 3)
+        self.assertEqual(len(norm), total * 3)
+        self.assertNotEqual(set(col[:60]), {0})
+
+    def test_world_scene_and_raycast(self):
+        game = build_game(seed=3, width=132, height=60, terrain_size=48,
+                          atlas_keys=["knight"], render_mode="webgl")
+        game._update_camera(force=True)
+        game.tick(0.0)
+        game._render(game._last_env)
+        bundle = gl_world_bundle(game.world)
+        self.assertEqual(bundle["meta"]["w"], 48)
+        self.assertGreater(len(bundle["heights"]), 0)
+        payload = gl_scene(game, game.world, 1)
+        self.assertEqual(payload["status"], "ready")
+        self.assertIn("camera", payload)
+        self.assertTrue(payload["entities"])
+        self.assertTrue(payload["hud"]["chars"])
+        self.assertIn("kind", payload["entities"][0])
+        self.assertIsInstance(payload["lights"], list)
+        self.assertTrue(payload["lights"])
+        self.assertLessEqual(len(payload["lights"]), 6)
+        for light in payload["lights"]:
+            self.assertIn("f", light)
+            self.assertGreaterEqual(light["f"], 0.0)
+            self.assertLessEqual(light["f"], 1.0)
+        self.assertIsNotNone(payload["hud_status"])
+        status = payload["hud_status"]
+        self.assertEqual(status["name"], game.world.player.name)
+        self.assertEqual(status["max_hp"], game.world.player.max_hp)
+        self.assertIn("quest", status)
+        self.assertGreaterEqual(status["gold"], 0)
+        self.assertTrue(payload["show_map"])
+        self.assertIn("x", payload["player"])
+        colors = base64.b64decode(bundle["colors"])
+        self.assertEqual(len(colors), 48 * 48 * 4)
+        self.assertGreater(max(colors[3::4]), 0,
+                           "terrain material ids should ride in the alpha")
+        game.show_map = False
+        self.assertFalse(gl_scene(game, game.world, 2)["show_map"])
+        point = game.pick_world(66, 50)
+        self.assertIsNotNone(point, "the WebGL click ray should hit terrain")
+
+    def test_webgl_page_has_a_token_slot(self):
+        self.assertIn("__TOKEN__", PLAY3D_HTML)
+        self.assertIn("webgl2", PLAY3D_HTML.lower())
+        self.assertIn("uWet", PLAY3D_HTML)
+        self.assertIn("uSnowCap", PLAY3D_HTML)
+        self.assertIn("uPointFlick", PLAY3D_HTML)
+        self.assertIn("uSunCol", PLAY3D_HTML)
+        self.assertIn("uRain", PLAY3D_HTML)
+        self.assertIn("weatherEnv", PLAY3D_HTML)
+        self.assertIn("uCloudAmt", PLAY3D_HTML)
+        self.assertIn("uStarVis", PLAY3D_HTML)
+        self.assertIn("uSunLight", PLAY3D_HTML)
+        self.assertIn("cloudShade", PLAY3D_HTML)
+        self.assertIn("lightningAt", PLAY3D_HTML)
+        self.assertIn("float wisps", PLAY3D_HTML)
+        self.assertIn("cloudCol", PLAY3D_HTML)
+        self.assertIn("drawStatusPanel", PLAY3D_HTML)
+        self.assertIn("hud_status", PLAY3D_HTML)
+        self.assertIn("hudBar", PLAY3D_HTML)
+        self.assertIn("mapCanvas", PLAY3D_HTML)
+        self.assertIn("drawImage(mapCanvas", PLAY3D_HTML)
 
 
 class TestRules(unittest.TestCase):
@@ -472,6 +721,18 @@ class TestCliValidation(unittest.TestCase):
     def test_bad_demo_seconds_refused(self):
         code, _ = self._run(["--demo", "-2"])
         self.assertEqual(code, 1)
+
+    def test_bad_gfx_size_refused(self):
+        code, err = self._run(["--gfx-shot", "frame.png",
+                               "--gfx-size", "10x10"])
+        self.assertEqual(code, 1)
+        self.assertIn("What:", err)
+
+    def test_unknown_gfx_scene_refused(self):
+        code, err = self._run(["--gfx-shot", "frame.png",
+                               "--gfx-scene", "nowhere"])
+        self.assertEqual(code, 1)
+        self.assertIn("Use one of:", err)
 
 
 class TestReviewRegressions(unittest.TestCase):
