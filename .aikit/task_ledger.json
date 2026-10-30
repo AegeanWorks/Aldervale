@@ -1,55 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-gpu-hud-v1",
+    "task_id": "aldervale-gpu-hud-compact-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793376824.3487356,
-    "owner": "opencode:gfx",
-    "started_by": "opencode:gfx",
+    "updated_at": 1793399357.7703092,
+    "owner": "opencode:web",
+    "started_by": "opencode:web",
     "continuations": [],
-    "completed_at": 1793376825.743786
+    "completed_at": 1793399366.476733
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-gpu-atmosphere-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Phase 4 green: 190 tests (75.9s), hygiene, guidelines/map and secrets pass 4/4. GPU atmosphere shipped: 1024x1024 directional shadow map with a front-face-culled terrain depth pass, 4-tap PCF, bias and normal offset; star points and a moon in the night sky; GPU rain streaks and snow dots driven by world weather; /play3d?weather=rain&day=0.8 seeds a preview session. Live Edge captures verified day shadows, night stars/moon, and rain at night; model night tint no longer double-darkens. README and ADR-030 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793370435.1869032,
-      "timestamp_str": "2026-10-30 17:27:15",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-atmosphere-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-gpu-atmosphere-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793370441.3604512,
-      "timestamp_str": "2026-10-30 17:27:21",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-lights-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] GPU lighting and surface pass: six nearest point lights from fires/torches/shrines/windows, water shoreline foam sampled from the height texture, and a three-octave drifting cloud layer. [2/2] Tests, README/ADR-031, full gates.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793371334.463111,
-      "timestamp_str": "2026-10-30 17:42:14",
-      "agent": "opencode:gfx",
-      "impact_assessment": {
-        "why": "Night fires and windows were dark and the water/sky were still flat planes; point lights, foam and clouds complete the GPU atmosphere without changing simulation.",
-        "benefits": "Warmer readable night scenes, grounded water edges and a living sky, all from existing world data and a bounded six-light loop.",
-        "risks": "contract: none; dependency: none; concurrency: none; state: none; performance: six-light loops and water height sampling add fragment cost; visual: over-bright point lights can wash out the scene.",
-        "mitigation": "Cap lights at six, use quadratic falloff with a small night power, reduce radii, reuse the existing height texture, and verify day/night/rain captures."
-      }
-    },
     {
       "task_id": "aldervale-gpu-lights-v1",
       "phase": "phase 4",
@@ -260,6 +222,44 @@
       "timestamp": 1793376825.7437892,
       "timestamp_str": "2026-10-30 19:13:45",
       "agent": "opencode:gfx"
+    },
+    {
+      "task_id": "aldervale-gpu-hud-compact-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Add a failing-first compact-layout test and fix the GPU status panel so the gear line clears the HP/STA/XP bars at 11-13px rows; verify in the live /play3d page at a mid-size stage. [2/2] Run the full project gate and commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793397861.2560358,
+      "timestamp_str": "2026-10-31 01:04:21",
+      "agent": "opencode:web",
+      "impact_assessment": {
+        "why": "At 11-13px rows the compact GPU HUD draws the gear line through the HP/STA/XP bars; the full >=80px layout was verified but the compact branch was not.",
+        "benefits": "A readable HUD at common laptop window sizes without leaving the 5.2-row scrim or falling back to ASCII.",
+        "risks": "contract: none, drawing-only; dependency: none; concurrency: none; state: none; visual: title, bars, gear and quest must stay inside the 5.2-row panel and clear each other down to the 11px threshold; test: page-string assertions only, so the live capture remains the visual proof.",
+        "mitigation": "Derive compact row positions from the panel height, clamp the gear baseline above the bar bottom, pin the geometry in a unit test, and verify at a compact stage plus the existing full stage."
+      }
+    },
+    {
+      "task_id": "aldervale-gpu-hud-compact-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 green: 191 tests (92.9s), hygiene, guidelines/map and secrets pass 4/4. Compact GPU HUD fixed: 13px title, 8px bars at y+19 with 9px labels, gear baseline clamped above barBottom, 10px quest line at y+h-5; no collisions at 11-13px rows. Live captures verified 1300x900 compact, 2200x1400 full and 1000x700 ASCII fallback. Added test_webgl_compact_hud_keeps_rows_apart. README and ADR unchanged because the documented compact/full/fallback behaviour is unchanged. checklists: passed; commit follows, no push.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793399357.7703092,
+      "timestamp_str": "2026-10-31 01:29:17",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-gpu-hud-compact-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-gpu-hud-compact-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793399366.4767349,
+      "timestamp_str": "2026-10-31 01:29:26",
+      "agent": "opencode:web"
     }
   ]
 }

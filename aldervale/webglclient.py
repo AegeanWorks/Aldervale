@@ -1120,7 +1120,7 @@ function drawWeather(){
 
 const HUD_FONT = '"Cascadia Mono",Consolas,monospace';
 
-function hudBar(x, y, w, h, frac, color, label, value){
+function hudBar(x, y, w, h, frac, color, label, value, fontPx){
   frac = Math.max(0, Math.min(1, frac || 0));
   hctx.fillStyle = "rgba(255,255,255,.09)";
   hctx.fillRect(x, y, w, h);
@@ -1129,7 +1129,7 @@ function hudBar(x, y, w, h, frac, color, label, value){
   hctx.strokeStyle = "rgba(255,255,255,.18)";
   hctx.lineWidth = 1;
   hctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-  hctx.font = "10px " + HUD_FONT;
+  hctx.font = (fontPx || 10) + "px " + HUD_FONT;
   hctx.textBaseline = "middle";
   hctx.textAlign = "left";
   hctx.fillStyle = "rgba(235,240,248,.94)";
@@ -1162,10 +1162,11 @@ function drawStatusPanel(cssW, cssH, panelH){
   hctx.lineTo(x + w, y + 0.5);
   hctx.stroke();
 
-  const top = y + (compact ? 16 : 20);
+  const top = y + (compact ? 13 : 20);
   hctx.textBaseline = "alphabetic";
   hctx.textAlign = "left";
-  hctx.font = '600 16px "Segoe UI",system-ui,sans-serif';
+  hctx.font = '600 ' + (compact ? 13 : 16) +
+    'px "Segoe UI",system-ui,sans-serif';
   hctx.fillStyle = "#e8c45a";
   const nameW = hctx.measureText(st.name).width;
   hctx.fillText(st.name, x + pad, top);
@@ -1180,34 +1181,39 @@ function drawStatusPanel(cssW, cssH, panelH){
   hctx.fillText(gold, x + w - pad, top);
 
   const gap = 8;
-  const barH = compact ? 9 : 11;
-  const barY = y + (compact ? 25 : 30);
+  const barH = compact ? 8 : 11;
+  const barY = y + (compact ? 19 : 30);
+  const barBottom = barY + barH;
+  const barFont = compact ? 9 : 10;
   const barArea = Math.min(1180, w - pad * 2);
   const bw = (barArea - gap * 2) / 3;
   hudBar(x + pad, barY, bw, barH, st.hp / st.max_hp,
          st.hp <= st.max_hp * 0.35 ? "#e07a7a" : "#7fd18a",
-         "HP", Math.ceil(st.hp) + " / " + st.max_hp);
+         "HP", Math.ceil(st.hp) + " / " + st.max_hp, barFont);
   hudBar(x + pad + bw + gap, barY, bw, barH, st.stamina / st.max_stamina,
-         "#78a0e6", "STA", Math.ceil(st.stamina));
+         "#78a0e6", "STA", Math.ceil(st.stamina), barFont);
   hudBar(x + pad + (bw + gap) * 2, barY, bw, barH, st.xp / st.xp_next,
-         "#be96e6", "XP", st.xp + " / " + st.xp_next);
+         "#be96e6", "XP", st.xp + " / " + st.xp_next, barFont);
 
   hctx.font = (compact ? "9px " : "10px ") + HUD_FONT;
   hctx.textBaseline = "alphabetic";
-  const gearY = y + h - (compact ? 24 : 30);
+  const gearY = Math.max(y + h - (compact ? 20 : 30),
+                         barY + barH + (compact ? 11 : 12));
   hctx.textAlign = "left";
   hctx.fillStyle = "#9aa6ba";
   const gear = st.weapon.toUpperCase() + "  ATK " + st.weapon_atk +
     "    " + st.armor.toUpperCase() + "  DEF " + st.armor_def;
-  hctx.fillText(clipText(gear, w - pad * 2 - 130), x + pad, gearY);
+  hctx.fillText(clipText(gear, w - pad * 2 - (compact ? 96 : 130)),
+                x + pad, gearY);
   hctx.textAlign = "right";
   hctx.fillStyle = "#f0a05a";
   hctx.fillText("POTIONS " + st.potions + " / 9", x + w - pad, gearY);
   hctx.textAlign = "left";
   hctx.fillStyle = "rgba(222,200,140,.92)";
-  hctx.font = "11px " + HUD_FONT;
+  const questY = y + h - (compact ? 5 : 11);
+  hctx.font = (compact ? 10 : 11) + "px " + HUD_FONT;
   hctx.fillText(clipText("QUEST  " + st.quest, w - pad * 2),
-                x + pad, y + h - (compact ? 9 : 11));
+                x + pad, questY);
 }
 
 function drawHud(){

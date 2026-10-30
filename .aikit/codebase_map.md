@@ -9,8 +9,8 @@
 - **Total Python Modules**: `31`
 - **Total Classes**: `70`
 - **Total Top-Level Functions**: `226`
-- **Total Class Methods**: `438`
-- **Total Source Lines**: `15501`
+- **Total Class Methods**: `439`
+- **Total Source Lines**: `15525`
 
 ---
 
@@ -686,7 +686,7 @@
 ### [`aldervale/webglclient.py`](aldervale/webglclient.py)
 > *WebGL browser client for the Aldervale GPU path.*
 
-**Size**: `1498` lines (`56207` bytes)
+**Size**: `1504` lines (`56503` bytes)
 
 ---
 
@@ -765,7 +765,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `893` lines (`35784` bytes)
+**Size**: `911` lines (`36737` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -839,6 +839,7 @@
   - Method `.test_model_bundle_covers_every_pose()`
   - Method `.test_world_scene_and_raycast()`
   - Method `.test_webgl_page_has_a_token_slot()`
+  - Method `.test_webgl_compact_hud_keeps_rows_apart()`
 - `class TestRules`
   - Method `.test_damage_roll_bounds()`
   - Method `.test_damage_roll_defence_reduces()`

@@ -649,6 +649,24 @@ class TestWebGL(unittest.TestCase):
         self.assertIn("mapCanvas", PLAY3D_HTML)
         self.assertIn("drawImage(mapCanvas", PLAY3D_HTML)
 
+    def test_webgl_compact_hud_keeps_rows_apart(self):
+        self.assertIn("const barH = compact ? 8 : 11;", PLAY3D_HTML)
+        self.assertIn("const barY = y + (compact ? 19 : 30);", PLAY3D_HTML)
+        self.assertIn("const barBottom = barY + barH;", PLAY3D_HTML)
+        self.assertIn("barY + barH + (compact ? 11 : 12)", PLAY3D_HTML)
+        self.assertIn("const questY = y + h - (compact ? 5 : 11);",
+                      PLAY3D_HTML)
+        # Smallest stage that still draws the panel: 11px rows, 5.2-row scrim.
+        panel_h = 11 * 5.2
+        bar_y, bar_h = 19, 8
+        gear_y = max(panel_h - 20, bar_y + bar_h + 11)
+        self.assertGreater(gear_y - 9, bar_y + bar_h,
+                           "9px gear glyphs must clear the bars")
+        quest_y = panel_h - 5
+        self.assertGreater(quest_y - 10, gear_y + 2,
+                           "10px quest glyphs must clear the gear line")
+        self.assertLess(quest_y, panel_h)
+
 
 class TestRules(unittest.TestCase):
     def test_damage_roll_bounds(self):
