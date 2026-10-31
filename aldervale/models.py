@@ -650,18 +650,34 @@ def house(variant=0):
           rx=0.54, pivot=(0.0, ridge, 0.0))
     b.box(0.0, 2.85, -1.02 * scale, 5.4 * scale, 0.16, 2.9 * scale, STRAW,
           rx=-0.54, pivot=(0.0, ridge, 0.0))
-    for t in (0.28, 0.52, 0.76):
+    for i, t in enumerate((0.14, 0.28, 0.42, 0.56, 0.70, 0.84)):
         y = ridge - (ridge - 2.33) * t
         z = 1.95 * t * scale
-        b.box(0.0, y, z, 5.46 * scale, 0.05, 0.17, C(178, 142, 76),
+        tone = C(182, 146, 78) if i % 2 == 0 else C(160, 126, 66)
+        b.box(0.0, y, z, 5.46 * scale, 0.05, 0.17, tone,
               rx=0.54, pivot=(0.0, ridge, 0.0))
-        b.box(0.0, y, -z, 5.46 * scale, 0.05, 0.17, C(166, 132, 70),
+        b.box(0.0, y, -z, 5.46 * scale, 0.05, 0.17, tone,
               rx=-0.54, pivot=(0.0, ridge, 0.0))
-    b.box(0.0, ridge, 0.0, 5.5 * scale, 0.14, 0.24, WOOD_D)
+    b.box(0.0, ridge + 0.02, 0.0, 5.62 * scale, 0.12, 0.30,
+          C(150, 118, 64))
+    b.cylinder(-2.78 * scale, ridge + 0.07, 0.0, 0.10, 5.56 * scale, 5,
+               C(172, 136, 74), axis="x")
+    for sx in (-1.0, 1.0):
+        b.box(sx * 2.82 * scale, ridge + 0.07, 0.0, 0.10, 0.20, 0.20,
+              C(138, 108, 58))
+    for sz in (-1.0, 1.0):
+        b.box(0.0, 2.10, sz * 2.28 * scale, 5.5 * scale, 0.12, 0.10,
+              WOOD_D)
+        for sx in (-1.0, 1.0):
+            b.box(sx * 2.52 * scale, 2.18, sz * 2.12 * scale,
+                  0.10, 0.46, 0.10, WOOD_D, rx=sz * 0.55,
+                  pivot=(sx * 2.52 * scale, 2.0, sz * 1.9 * scale))
     b.box(1.5 * scale * mirror, ridge + 0.17, -0.7 * scale,
           0.72, 0.10, 0.72, STONE)
     b.box(1.5 * scale * mirror, ridge + 0.24, -0.7 * scale,
           0.40, 0.05, 0.40, C(44, 40, 38))
+    b.box(1.5 * scale * mirror, ridge + 0.30, -0.7 * scale,
+          0.28, 0.10, 0.28, C(62, 54, 48))
     b.box(0.15 * scale * mirror, 1.78, 2.0 * scale, 0.18, 0.24, 0.12,
           C(255, 190, 90), emissive=True)
     b.box(0.15 * scale * mirror, 1.94, 1.99 * scale, 0.06, 0.10, 0.06,

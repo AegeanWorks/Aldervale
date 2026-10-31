@@ -10,7 +10,7 @@
 - **Total Classes**: `70`
 - **Total Top-Level Functions**: `226`
 - **Total Class Methods**: `442`
-- **Total Source Lines**: `15641`
+- **Total Source Lines**: `15658`
 
 ---
 
@@ -461,7 +461,7 @@
 ### [`aldervale/models.py`](aldervale/models.py)
 > *Every 3D model in the realm: actors, creatures, flora and architecture.*
 
-**Size**: `901` lines (`39762` bytes)
+**Size**: `917` lines (`40547` bytes)
 
 **Functions:**
 - `def C(r, g, b)`
@@ -765,7 +765,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `940` lines (`38105` bytes)
+**Size**: `941` lines (`38175` bytes)
 
 **Classes:**
 - `class FakeTerm`

@@ -261,7 +261,8 @@ class TestMesh(unittest.TestCase):
 
     def test_house_carries_layered_architecture_detail(self):
         house = models.house()
-        self.assertGreater(len(house.faces), 300)
+        self.assertGreaterEqual(len(house.faces), 400)
+        self.assertGreater(max(v[1] for v in house.verts), 3.70)
         smooth = sum(1 for f in house.faces if len(f) > 6 and f[6])
         self.assertGreaterEqual(smooth, 24)
 

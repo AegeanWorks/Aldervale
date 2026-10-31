@@ -100,6 +100,9 @@ world, camera, meshes and clock.
   surrounds those lights; the campfire now has an ash bed, a stone ring,
   charred logs with ember tips and four flame tongues, and the gate torch has
   a pronged iron basket with stacked flame cones.
+- Cottage roofs stack six thatch rows per slope in alternating straw tones
+  under a rounded ridge with end caps, with eaves fascia, four corner brackets
+  and a chimney pot.
 - Rain darkens figures and roofs and adds a wet sheen; snow caps up-facing
   surfaces, while fire and torch flames stay clear. Fires, torches and windows
   flicker.
