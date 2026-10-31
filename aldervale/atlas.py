@@ -117,7 +117,7 @@ MODEL_SPECS = {
     "campfire": _spec(models.campfire, {
         "fire0": {"frame": 0}, "fire1": {"frame": 1},
         "fire2": {"frame": 2}, "fire3": {"frame": 3},
-    }, size=(1.3, 1.0), height=0.8, cells=18),
+    }, size=(1.5, 1.5), height=0.9, cells=18),
     "torch": _spec(models.torch, {
         "fire0": {"frame": 0}, "fire1": {"frame": 1},
         "fire2": {"frame": 2}, "fire3": {"frame": 3},

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `31`
 - **Total Classes**: `70`
 - **Total Top-Level Functions**: `226`
-- **Total Class Methods**: `439`
-- **Total Source Lines**: `15525`
+- **Total Class Methods**: `442`
+- **Total Source Lines**: `15641`
 
 ---
 
@@ -461,7 +461,7 @@
 ### [`aldervale/models.py`](aldervale/models.py)
 > *Every 3D model in the realm: actors, creatures, flora and architecture.*
 
-**Size**: `875` lines (`38632` bytes)
+**Size**: `901` lines (`39762` bytes)
 
 **Functions:**
 - `def C(r, g, b)`
@@ -487,8 +487,8 @@
 - `def cart()`
 - `def anvil()`
 - `def haystack()`
-- `def campfire(frame)` - *A crackling fire; frame 0-3 wobbles the flame cones (emissive).*
-- `def torch(frame)` - *A gate torch: iron post, waxed head and a four-frame flame.*
+- `def campfire(frame)` - *A stone-ringed fire: ash bed, charred logs and layered flame tongues.*
+- `def torch(frame)` - *A gate torch: iron post, pronged basket and a compact flame.*
 - `def chest(opened)`
 - `def shrine()`
 - `def banner(frame)` - *A tower banner; two wave frames.*
@@ -686,7 +686,7 @@
 ### [`aldervale/webglclient.py`](aldervale/webglclient.py)
 > *WebGL browser client for the Aldervale GPU path.*
 
-**Size**: `1504` lines (`56503` bytes)
+**Size**: `1565` lines (`58972` bytes)
 
 ---
 
@@ -765,7 +765,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `911` lines (`36737` bytes)
+**Size**: `940` lines (`38105` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -803,6 +803,8 @@
   - Method `.test_house_carries_layered_architecture_detail()`
   - Method `.test_knight_cape_and_shield_reach_behind_and_outboard()`
   - Method `.test_boulders_are_rounded()`
+  - Method `.test_campfire_has_a_stone_ring_logs_and_layered_flames()`
+  - Method `.test_torch_flame_is_compact_and_basketed()`
 - `class TestStudio`
   - Method `.test_encode_screen_keeps_cells_and_colours()`
   - Method `.test_collect_models_samples_yaws_and_skips_missing()`
@@ -840,6 +842,7 @@
   - Method `.test_world_scene_and_raycast()`
   - Method `.test_webgl_page_has_a_token_slot()`
   - Method `.test_webgl_compact_hud_keeps_rows_apart()`
+  - Method `.test_webgl_page_draws_additive_light_glow()`
 - `class TestRules`
   - Method `.test_damage_roll_bounds()`
   - Method `.test_damage_roll_defence_reduces()`

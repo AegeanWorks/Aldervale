@@ -1,55 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-gpu-hud-compact-v1",
+    "task_id": "aldervale-fire-pass-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793399357.7703092,
+    "updated_at": 1793428374.0399802,
     "owner": "opencode:web",
     "started_by": "opencode:web",
     "continuations": [],
-    "completed_at": 1793399366.476733
+    "completed_at": 1793428374.389661
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-gpu-lights-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 190 tests (69.5s), hygiene, guidelines/map and secrets pass 4/4. GPU lights/water/sky shipped: six nearest point lights warm terrain and models at night, the water shader adds depth-based shoreline foam, and the sky has a drifting three-octave cloud layer. Live headless captures verify day, night/rain and the new fire/window pools; point-light power and radii were tuned down after the first night capture washed out. README and ADR-031 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793371419.2805953,
-      "timestamp_str": "2026-10-30 17:43:39",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-lights-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-gpu-lights-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793371419.5466657,
-      "timestamp_str": "2026-10-30 17:43:39",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-surface-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Terrain material detail: material id in the colour alpha, shader grain for sand/grass/forest/road/rock/snow, flower flecks, wet and snow response. [2/3] Graphical minimap built from the height/colour bundle with water, roads, entity dots and a gold player marker; suppress the ASCII map in the GPU HUD. [3/3] Tests, README/ADR-032 and full gates.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793371891.4147484,
-      "timestamp_str": "2026-10-30 17:51:31",
-      "agent": "opencode:gfx",
-      "impact_assessment": {
-        "why": "The GPU ground read as one flat texture and the ASCII minimap clashed with the 3D view; materials and a real map are the remaining visible quality gap.",
-        "benefits": "Distinct ground materials, weather response and a useful overhead map, all from data already sent to the browser.",
-        "risks": "contract: the colour texture alpha now carries a material id; dependency: none; concurrency: none; state: none; performance: one offscreen canvas and a little extra fragment math; visual: grain and wet/snow response could look noisy or wash out the palette.",
-        "mitigation": "Keep the alpha consumer inside the GPU terrain shader, build the minimap once per world bundle, cap detail amplitudes, and verify day/night/rain captures before the gate."
-      }
-    },
     {
       "task_id": "aldervale-gpu-surface-v1",
       "phase": "phase 4",
@@ -259,6 +221,44 @@
       "status": "completed",
       "timestamp": 1793399366.4767349,
       "timestamp_str": "2026-10-31 01:29:26",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-fire-pass-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Failing-first model tests, then rebuild the campfire (ash bed, 8-stone ring, four charred logs with ember tips, four layered flame tongues) and slim the torch flame with an iron basket. [2/3] Add an additive light glow to the WebGL HUD for campfires, torches, shrines and lit windows. [3/3] Update README/ADR, capture day and night scenes, run the 4/4 gate and commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793427959.999199,
+      "timestamp_str": "2026-10-31 09:25:59",
+      "agent": "opencode:web",
+      "impact_assessment": {
+        "why": "The fire props are the coarsest models in the scene: the campfire reads as a solid orange cone and gate torches carry half-metre flames; the GPU scene also has no bloom around its point lights.",
+        "benefits": "Readable layered fire silhouettes, warmer and deeper night lighting around fires and windows, and a more believable village at dusk without new assets or dependencies.",
+        "risks": "contract: none, visual-only; dependency: none; concurrency: none; state: none; performance: up to six radial gradients per HUD frame; visual: glow must stay subtle by day and must not cover the HUD panel, and model bounds must stay inside the atlas spec size/height.",
+        "mitigation": "Cap glow radius and alpha, scale alpha by 1-daylight, skip modal states and lights behind the camera, update the atlas spec bounds, pin face/emissive/bounds and page hooks in tests, and verify day, night and small-stage captures."
+      }
+    },
+    {
+      "task_id": "aldervale-fire-pass-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Phase 4 green: 194 tests (97.1s), hygiene, guidelines/map and secrets pass 4/4. Rebuilt the campfire (ash bed, eight-stone ring, four charred logs with ember tips, four flame tongues and sparks; bounds 1.5x1.5x0.9) and the torch (pronged iron basket, three stacked flames, max height 2.085m). Added a projected additive light glow for up to six lights, scaled by 1-daylight with flicker and skipped in modals or behind the camera. README and ADR-037 updated. Day (1600x1000) and night (2200x1400) captures verified. checklists: passed; commit follows, no push.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793428374.0399802,
+      "timestamp_str": "2026-10-31 09:32:54",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-fire-pass-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-fire-pass-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793428374.389663,
+      "timestamp_str": "2026-10-31 09:32:54",
       "agent": "opencode:web"
     }
   ]

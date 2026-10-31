@@ -735,34 +735,60 @@ def haystack():
 
 
 def campfire(frame=0):
-    """A crackling fire; frame 0-3 wobbles the flame cones (emissive)."""
+    """A stone-ringed fire: ash bed, charred logs and layered flame tongues."""
     b = MeshBuilder()
-    for i in range(6):
-        a = i * 1.047
-        b.box(math.cos(a) * 0.55, 0.07, math.sin(a) * 0.55, 0.2, 0.14, 0.2,
-              STONE_D, ry=a)
-    for i in range(3):
-        b.box(0.0, 0.12, 0.0, 0.14, 0.14, 0.95, WOOD_D,
-              ry=i * 2.094 + 0.4, rx=0.06)
+    b.cylinder(0.0, 0.005, 0.0, 0.42, 0.03, 10, C(44, 40, 36))
+    b.box(0.0, 0.025, 0.0, 0.66, 0.02, 0.66, C(34, 30, 28), ry=0.785)
+    for i in range(8):
+        a = i * 0.7854 + 0.15
+        r = 0.58 + (0.03 if i % 2 else 0.0)
+        h = 0.13 + (0.04 if i % 3 == 0 else 0.0)
+        b.box(math.cos(a) * r, 0.05 + h * 0.5, math.sin(a) * r,
+              0.22, h, 0.20, STONE if i % 2 else STONE_D, ry=a)
+    for i in range(4):
+        a = i * 1.5708 + 0.35
+        b.box(math.cos(a) * 0.06, 0.13, math.sin(a) * 0.06,
+              0.14, 0.14, 0.78, C(64, 48, 34) if i % 2 else WOOD_D,
+              ry=a, rx=0.10)
+        b.box(math.cos(a) * 0.42, 0.12, math.sin(a) * 0.42,
+              0.12, 0.10, 0.10, EMBER, ry=a, emissive=True)
     wob = (0.0, 0.06, -0.05, 0.03)[frame % 4]
-    b.cone(wob * 0.5, 0.12, wob, 0.3, 0.52 + wob, 6, FLAME)
-    b.cone(wob, 0.14, -wob * 0.4, 0.17, 0.72 + wob * 0.8, 5, FLAME_HI, emissive=True)
-    b.box(0.2, 0.05, -0.2, 0.08, 0.08, 0.08, EMBER, emissive=True)
-    b.box(-0.24, 0.05, 0.16, 0.07, 0.07, 0.07, EMBER, emissive=True)
+    sway = (0.0, 0.03, -0.02, 0.015)[frame % 4]
+    b.cone(sway * 0.5, 0.10, 0.0, 0.21, 0.32 + wob, 6, FLAME,
+           emissive=True)
+    b.cone(-0.15 + sway, 0.10, 0.03, 0.10, 0.50 + wob * 0.7, 5, FLAME,
+           emissive=True)
+    b.cone(0.15 - sway, 0.10, -0.03, 0.09, 0.42 + wob * 0.5, 5, FLAME,
+           emissive=True)
+    b.cone(sway * 0.4, 0.11, -0.14, 0.08, 0.46 + wob * 0.4, 5, FLAME,
+           emissive=True)
+    b.cone(sway, 0.12, 0.02, 0.07, 0.62 + wob * 0.7, 5, FLAME_HI,
+           emissive=True)
+    b.box(0.28, 0.55 + wob, 0.12, 0.05, 0.05, 0.05, FLAME_HI,
+          emissive=True)
+    b.box(-0.22, 0.66 - wob, -0.15, 0.04, 0.04, 0.04, EMBER,
+          emissive=True)
     return b.build()
 
 
 def torch(frame=0):
-    """A gate torch: iron post, waxed head and a four-frame flame."""
+    """A gate torch: iron post, pronged basket and a compact flame."""
     b = MeshBuilder()
     b.box(0.0, 0.85, 0.0, 0.12, 1.7, 0.12, WOOD_D)
     b.box(0.0, 0.18, 0.0, 0.34, 0.18, 0.34, STONE_D)
-    b.box(0.0, 1.66, 0.0, 0.32, 0.12, 0.32, IRON)
+    b.box(0.0, 1.66, 0.0, 0.32, 0.10, 0.32, IRON)
+    for i in range(3):
+        a = i * 2.094 + 0.4
+        b.box(math.cos(a) * 0.14, 1.77, math.sin(a) * 0.14,
+              0.04, 0.22, 0.04, IRON)
     wob = (0.0, 0.05, -0.04, 0.02)[frame % 4]
-    b.cone(wob * 0.4, 1.72, 0.0, 0.19, 0.5 + wob, 6, FLAME, emissive=True)
-    b.cone(wob * 0.7, 1.74, 0.0, 0.1, 0.32 + wob * 0.5, 5, FLAME_HI,
+    b.cone(wob * 0.4, 1.72, 0.0, 0.14, 0.24 + wob, 6, FLAME,
            emissive=True)
-    b.box(0.0, 1.71, 0.0, 0.08, 0.08, 0.08, EMBER, emissive=True)
+    b.cone(wob * 0.7, 1.74, 0.0, 0.09, 0.28 + wob * 0.5, 5, FLAME,
+           emissive=True)
+    b.cone(wob, 1.75, 0.0, 0.05, 0.32 + wob * 0.3, 5, FLAME_HI,
+           emissive=True)
+    b.box(0.0, 1.70, 0.0, 0.08, 0.08, 0.08, EMBER, emissive=True)
     return b.build()
 
 

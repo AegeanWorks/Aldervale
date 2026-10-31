@@ -277,6 +277,28 @@ class TestMesh(unittest.TestCase):
         smooth = sum(1 for f in rock.faces if len(f) > 6 and f[6])
         self.assertGreaterEqual(smooth, 40)
 
+    def test_campfire_has_a_stone_ring_logs_and_layered_flames(self):
+        fire = models.campfire(frame=1)
+        emissive = sum(1 for f in fire.faces if f[5])
+        self.assertGreaterEqual(len(fire.faces), 120)
+        self.assertGreaterEqual(emissive, 40)
+        ys = [v[1] for v in fire.verts]
+        xs = [v[0] for v in fire.verts]
+        self.assertLess(max(ys), 0.95)
+        self.assertLessEqual(max(xs) - min(xs), 1.5)
+        shapes = {tuple(sorted({round(v[1], 2) for v in
+                                models.campfire(f).verts}))
+                  for f in range(4)}
+        self.assertEqual(len(shapes), 4, "the four fire frames must differ")
+
+    def test_torch_flame_is_compact_and_basketed(self):
+        torch = models.torch(frame=1)
+        ys = [v[1] for v in torch.verts]
+        self.assertLess(max(ys), 2.12)
+        self.assertGreaterEqual(len(torch.faces), 48)
+        emissive = sum(1 for f in torch.faces if f[5])
+        self.assertGreaterEqual(emissive, 20)
+
 
 class TestStudio(unittest.TestCase):
     def test_encode_screen_keeps_cells_and_colours(self):
@@ -666,6 +688,13 @@ class TestWebGL(unittest.TestCase):
         self.assertGreater(quest_y - 10, gear_y + 2,
                            "10px quest glyphs must clear the gear line")
         self.assertLess(quest_y, panel_h)
+
+    def test_webgl_page_draws_additive_light_glow(self):
+        self.assertIn("function drawLightGlow", PLAY3D_HTML)
+        self.assertIn('globalCompositeOperation = "lighter"', PLAY3D_HTML)
+        self.assertIn("function projectLight", PLAY3D_HTML)
+        self.assertIn("lightGlowRadius", PLAY3D_HTML)
+        self.assertIn("1.0 - scene.env.daylight", PLAY3D_HTML)
 
 
 class TestRules(unittest.TestCase):

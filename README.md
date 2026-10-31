@@ -96,6 +96,10 @@ world, camera, meshes and clock.
 - Up to six nearby point lights from campfires, torches, shrines and house
   windows warm the terrain and models at night; the water shader fades into
   shoreline foam and a drifting procedural cloud layer crosses the sky.
+- A soft additive halo, scaled by darkness and flicker and skipped in menus,
+  surrounds those lights; the campfire now has an ash bed, a stone ring,
+  charred logs with ember tips and four flame tongues, and the gate torch has
+  a pronged iron basket with stacked flame cones.
 - Rain darkens figures and roofs and adds a wet sheen; snow caps up-facing
   surfaces, while fire and torch flames stay clear. Fires, torches and windows
   flicker.

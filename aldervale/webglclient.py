@@ -1216,6 +1216,65 @@ function drawStatusPanel(cssW, cssH, panelH){
                 x + pad, questY);
 }
 
+function projectLight(light, vp, cssW, cssH, cam){
+  const x = vp[0] * light.x + vp[4] * light.y + vp[8] * light.z + vp[12];
+  const y = vp[1] * light.x + vp[5] * light.y + vp[9] * light.z + vp[13];
+  const w = vp[3] * light.x + vp[7] * light.y + vp[11] * light.z + vp[15];
+  if (w <= 0.15) return null;
+  const sx = (x / w * 0.5 + 0.5) * cssW;
+  const sy = (0.5 - y / w * 0.5) * cssH;
+  if (sx < -220 || sx > cssW + 220 || sy < -220 || sy > cssH + 220)
+    return null;
+  const dist = Math.hypot(light.x - cam.x, light.y - cam.y,
+                          light.z - cam.z);
+  if (dist > 70.0) return null;
+  const lightGlowRadius = 0.38;
+  const fx = cam.f / (cam.w * 0.5);
+  const radius = Math.max(18.0, Math.min(220.0,
+    (light.r || 4.0) * lightGlowRadius * fx * cssW * 0.5 /
+    Math.max(1.0, dist)));
+  return {x: sx, y: sy, r: radius, dist};
+}
+
+function drawLightGlow(cssW, cssH){
+  const lights = scene.lights || [];
+  if (!lights.length) return;
+  const night = 1.0 - scene.env.daylight;
+  if (night < 0.04) return;
+  const cam = scene.camera;
+  const fx = cam.f / (cam.w * 0.5);
+  const fy = cam.fy / (cam.h * 0.5);
+  const vp = mul(perspective(fx, fy, 0.4, 260.0), viewMatrix(cam));
+  const now = performance.now() / 1000.0;
+  hctx.save();
+  hctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < lights.length && i < 6; i++){
+    const light = lights[i];
+    const p = projectLight(light, vp, cssW, cssH, cam);
+    if (!p) continue;
+    const col = light.c || [1.0, 0.62, 0.30];
+    const r = Math.round(col[0] * 255);
+    const g = Math.round(col[1] * 255);
+    const b = Math.round(col[2] * 255);
+    const flick = 1.0 + (light.f === undefined ? 0.3 : light.f) * 0.12 *
+      Math.sin(now * 9.0 + i * 2.1);
+    const alpha = (0.10 + 0.30 * night) * flick;
+    const grad = hctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+    grad.addColorStop(0.0, "rgba(" + r + "," + g + "," + b + "," +
+                     (alpha * 0.52).toFixed(3) + ")");
+    grad.addColorStop(0.28, "rgba(" + r + "," + g + "," + b + "," +
+                     (alpha * 0.20).toFixed(3) + ")");
+    grad.addColorStop(0.62, "rgba(" + r + "," + g + "," + b + "," +
+                     (alpha * 0.05).toFixed(3) + ")");
+    grad.addColorStop(1.0, "rgba(" + r + "," + g + "," + b + ",0)");
+    hctx.fillStyle = grad;
+    hctx.beginPath();
+    hctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    hctx.fill();
+  }
+  hctx.restore();
+}
+
 function drawHud(){
   const cssW = hudCanvas.width / dpr, cssH = hudCanvas.height / dpr;
   hctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1225,6 +1284,8 @@ function drawHud(){
     hctx.fillStyle = scene.state === "title"
       ? "rgba(4,6,10,.35)" : "rgba(4,6,10,.62)";
     hctx.fillRect(0, 0, cssW, cssH);
+  } else {
+    drawLightGlow(cssW, cssH);
   }
   const w = scene.camera.w, h = scene.camera.h;
   const cw = cssW / w, ch = cssH / h;
