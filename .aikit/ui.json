@@ -13,7 +13,7 @@
     "tests/**"
   ],
   "commands": {
-    "fast": "python -m unittest discover",
+    "fast": "python -m aldervale --inspect .inspect",
     "snapshot": ""
   },
   "style": {
