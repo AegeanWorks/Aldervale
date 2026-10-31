@@ -232,6 +232,20 @@ def scene(game, world, seq=0):
     lights = [{"x": round(l[1], 2), "y": round(l[2], 2),
                "z": round(l[3], 2), "c": l[4],
                "r": l[5], "f": l[6]} for l in lights[:6]]
+    smoke = []
+    chimney = {"house0": (1.5, -0.7), "house1": (-1.5, -0.7),
+               "house2": (1.275, -0.595)}
+    for ent in world.entities:
+        if not ent.model.startswith("house"):
+            continue
+        lx, lz = chimney.get(ent.model, (1.5, -0.7))
+        c, s = math.cos(ent.yaw), math.sin(ent.yaw)
+        smoke.append({
+            "x": round(ent.x + c * lx + s * lz, 2),
+            "y": round(ent.ground_y + 3.82, 2),
+            "z": round(ent.z - s * lx + c * lz, 2),
+            "phase": round((len(smoke) * 0.37) % 1.0, 3),
+        })
     p = world.player
     inv = p.inventory
     status = None
@@ -279,6 +293,7 @@ def scene(game, world, seq=0):
         },
         "entities": ents,
         "lights": lights,
+        "smoke": smoke,
         "hud_status": status,
         "hud": _hud_rows(game.screen),
         "state": game.state,

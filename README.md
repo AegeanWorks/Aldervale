@@ -102,7 +102,9 @@ world, camera, meshes and clock.
   a pronged iron basket with stacked flame cones.
 - Cottage roofs stack six thatch rows per slope in alternating straw tones
   under a rounded ridge with end caps, with eaves fascia, four corner brackets
-  and a chimney pot.
+  and a chimney pot. Every cottage sends its chimney position with the scene,
+  and the browser drifts four soft puffs above it, so the skyline moves by day
+  and night.
 - Rain darkens figures and roofs and adds a wet sheen; snow caps up-facing
   surfaces, while fire and torch flames stay clear. Fires, torches and windows
   flicker.

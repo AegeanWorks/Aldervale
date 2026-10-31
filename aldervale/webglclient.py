@@ -1216,24 +1216,28 @@ function drawStatusPanel(cssW, cssH, panelH){
                 x + pad, questY);
 }
 
-function projectLight(light, vp, cssW, cssH, cam){
-  const x = vp[0] * light.x + vp[4] * light.y + vp[8] * light.z + vp[12];
-  const y = vp[1] * light.x + vp[5] * light.y + vp[9] * light.z + vp[13];
-  const w = vp[3] * light.x + vp[7] * light.y + vp[11] * light.z + vp[15];
+function projectPoint(x, y, z, vp, cssW, cssH, cam){
+  const cx = vp[0] * x + vp[4] * y + vp[8] * z + vp[12];
+  const cy = vp[1] * x + vp[5] * y + vp[9] * z + vp[13];
+  const w = vp[3] * x + vp[7] * y + vp[11] * z + vp[15];
   if (w <= 0.15) return null;
-  const sx = (x / w * 0.5 + 0.5) * cssW;
-  const sy = (0.5 - y / w * 0.5) * cssH;
-  if (sx < -220 || sx > cssW + 220 || sy < -220 || sy > cssH + 220)
+  const sx = (cx / w * 0.5 + 0.5) * cssW;
+  const sy = (0.5 - cy / w * 0.5) * cssH;
+  if (sx < -250 || sx > cssW + 250 || sy < -250 || sy > cssH + 250)
     return null;
-  const dist = Math.hypot(light.x - cam.x, light.y - cam.y,
-                          light.z - cam.z);
-  if (dist > 70.0) return null;
+  return {x: sx, y: sy,
+          dist: Math.hypot(x - cam.x, y - cam.y, z - cam.z)};
+}
+
+function projectLight(light, vp, cssW, cssH, cam){
+  const p = projectPoint(light.x, light.y, light.z, vp, cssW, cssH, cam);
+  if (!p || p.dist > 70.0) return null;
   const lightGlowRadius = 0.38;
   const fx = cam.f / (cam.w * 0.5);
   const radius = Math.max(18.0, Math.min(220.0,
     (light.r || 4.0) * lightGlowRadius * fx * cssW * 0.5 /
-    Math.max(1.0, dist)));
-  return {x: sx, y: sy, r: radius, dist};
+    Math.max(1.0, p.dist)));
+  return {x: p.x, y: p.y, r: radius, dist: p.dist};
 }
 
 function drawLightGlow(cssW, cssH){
@@ -1275,6 +1279,53 @@ function drawLightGlow(cssW, cssH){
   hctx.restore();
 }
 
+let smokeSprite = null;
+
+function smokePuff(){
+  if (smokeSprite) return smokeSprite;
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(32, 32, 2, 32, 32, 31);
+  grad.addColorStop(0.0, "rgba(236,239,244,1)");
+  grad.addColorStop(0.55, "rgba(222,226,234,0.55)");
+  grad.addColorStop(1.0, "rgba(210,214,224,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  smokeSprite = c;
+  return c;
+}
+
+function drawChimneySmoke(cssW, cssH){
+  const smoke = scene.smoke || [];
+  if (!smoke.length) return;
+  const cam = scene.camera;
+  const fx = cam.f / (cam.w * 0.5);
+  const fy = cam.fy / (cam.h * 0.5);
+  const vp = mul(perspective(fx, fy, 0.4, 260.0), viewMatrix(cam));
+  const now = performance.now() / 1000.0;
+  const night = 1.0 - scene.env.daylight;
+  hctx.save();
+  for (const src of smoke){
+    for (let i = 0; i < 4; i++){
+      const t = (now * 0.05 + src.phase + i * 0.25) % 1.0;
+      const drift = Math.sin(now * 0.5 + src.phase * 6.28 + i * 1.7) * 0.28
+        + t * 1.35;
+      const p = projectPoint(src.x + drift, src.y + t * 3.6,
+                             src.z + drift * 0.45, vp, cssW, cssH, cam);
+      if (!p) continue;
+      const radius = Math.max(9.0, Math.min(64.0,
+        (0.40 + t * 1.10) * fx * cssW * 0.5 / Math.max(1.0, p.dist)));
+      const alpha = (1.0 - t) * (0.28 + 0.06 * night);
+      hctx.globalAlpha = alpha;
+      hctx.drawImage(smokePuff(), p.x - radius, p.y - radius,
+                     radius * 2, radius * 2);
+      hctx.globalAlpha = 1.0;
+    }
+  }
+  hctx.restore();
+}
+
 function drawHud(){
   const cssW = hudCanvas.width / dpr, cssH = hudCanvas.height / dpr;
   hctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1286,6 +1337,7 @@ function drawHud(){
     hctx.fillRect(0, 0, cssW, cssH);
   } else {
     drawLightGlow(cssW, cssH);
+    drawChimneySmoke(cssW, cssH);
   }
   const w = scene.camera.w, h = scene.camera.h;
   const cw = cssW / w, ch = cssH / h;

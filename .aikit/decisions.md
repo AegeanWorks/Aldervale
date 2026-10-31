@@ -307,3 +307,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Replace the three-strip roof with six thatch rows per slope in two close straw tones, a rounded ridge cylinder with end caps, a fascia board along both eaves, four diagonal corner brackets and a chimney pot. The roof grows from 356 to 451 faces per house pose and reaches 3.77m, still under the 4.3m atlas height.
 - **Consequences**: Cottage roofs gain a layered thatch outline, visible eaves and corner depth from the play camera. The extra 95 faces are baked once per house variant, so the sprite atlas and WebGL bundle grow by a few hundred faces while runtime draw calls are unchanged. No simulation, save or control change. The house test pins at least 400 faces and a ridge above 3.70m; the live village capture verifies the result.
 - Cross-principle check: PRINCIPLE-010 (bounded face growth), PRINCIPLE-012 (procedural model, no new assets), PRINCIPLE-014 (mesh test), PRINCIPLE-015 (live village capture).
+
+### ADR-039: Chimney smoke from the scene payload
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: The cottages gained chimney pots in ADR-038, but they emitted nothing, so the village skyline stayed static and the new roof detail felt unfinished.
+- **Decision**: Add a `smoke` list to the WebGL scene with the world position and phase of every cottage chimney, computed from the variant-specific chimney offset rotated by the house yaw. The browser projects each source through the shared camera matrix and draws four cached radial puffs that rise 3.6m, drift sideways and fade over a 20-second cycle; alpha is 0.28 by day and 0.34 at night, modal states skip the pass, and a 64px sprite is cached once instead of building gradients per frame.
+- **Consequences**: Five village chimneys now trail soft smoke that reads against both blue sky and stars, with one drawImage per puff and no new assets. The payload grows by five small objects per tick; simulation, saves and controls are untouched. Tests pin the payload fields and page hooks, and clear-day and night captures verify the plumes.
+- Cross-principle check: PRINCIPLE-010 (cached sprite, five sources), PRINCIPLE-012 (procedural puffs, no textures), PRINCIPLE-014 (payload and page tests), PRINCIPLE-015 (live day/night captures).

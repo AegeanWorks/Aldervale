@@ -9,8 +9,8 @@
 - **Total Python Modules**: `31`
 - **Total Classes**: `70`
 - **Total Top-Level Functions**: `226`
-- **Total Class Methods**: `442`
-- **Total Source Lines**: `15658`
+- **Total Class Methods**: `443`
+- **Total Source Lines**: `15734`
 
 ---
 
@@ -686,14 +686,14 @@
 ### [`aldervale/webglclient.py`](aldervale/webglclient.py)
 > *WebGL browser client for the Aldervale GPU path.*
 
-**Size**: `1565` lines (`58972` bytes)
+**Size**: `1617` lines (`60698` bytes)
 
 ---
 
 ### [`aldervale/webglscene.py`](aldervale/webglscene.py)
 > *World and model payloads for the WebGL client.*
 
-**Size**: `293` lines (`10288` bytes)
+**Size**: `308` lines (`10878` bytes)
 
 **Classes:**
 - `class MeshAtlas` - *Minimal atlas for the GPU path: source meshes, no baked sprites.*
@@ -765,7 +765,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `941` lines (`38175` bytes)
+**Size**: `950` lines (`38630` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -843,6 +843,7 @@
   - Method `.test_webgl_page_has_a_token_slot()`
   - Method `.test_webgl_compact_hud_keeps_rows_apart()`
   - Method `.test_webgl_page_draws_additive_light_glow()`
+  - Method `.test_webgl_page_draws_chimney_smoke()`
 - `class TestRules`
   - Method `.test_damage_roll_bounds()`
   - Method `.test_damage_roll_defence_reduces()`

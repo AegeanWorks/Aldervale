@@ -640,6 +640,9 @@ class TestWebGL(unittest.TestCase):
         self.assertIn("quest", status)
         self.assertGreaterEqual(status["gold"], 0)
         self.assertTrue(payload["show_map"])
+        self.assertGreaterEqual(len(payload["smoke"]), 3)
+        for puff in payload["smoke"]:
+            self.assertEqual(set(puff), {"x", "y", "z", "phase"})
         self.assertIn("x", payload["player"])
         colors = base64.b64decode(bundle["colors"])
         self.assertEqual(len(colors), 48 * 48 * 4)
@@ -696,6 +699,12 @@ class TestWebGL(unittest.TestCase):
         self.assertIn("function projectLight", PLAY3D_HTML)
         self.assertIn("lightGlowRadius", PLAY3D_HTML)
         self.assertIn("1.0 - scene.env.daylight", PLAY3D_HTML)
+
+    def test_webgl_page_draws_chimney_smoke(self):
+        self.assertIn("function drawChimneySmoke", PLAY3D_HTML)
+        self.assertIn("scene.smoke", PLAY3D_HTML)
+        self.assertIn("function projectPoint", PLAY3D_HTML)
+        self.assertIn("drawChimneySmoke(cssW, cssH)", PLAY3D_HTML)
 
 
 class TestRules(unittest.TestCase):

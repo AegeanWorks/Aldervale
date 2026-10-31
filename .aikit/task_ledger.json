@@ -1,55 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-roof-pass-v1",
+    "task_id": "aldervale-smoke-pass-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793428683.5375714,
+    "updated_at": 1793433900.0106492,
     "owner": "opencode:web",
     "started_by": "opencode:web",
     "continuations": [],
-    "completed_at": 1793428683.8714163
+    "completed_at": 1793433900.9765735
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-gpu-weather-response-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Phase 4 green: 190 tests (77.2s), hygiene, guidelines/map and secrets pass 4/4. Weather-response pass shipped: rain darkens models and adds a wet sheen, snow caps up-facing roofs/shoulders with flames excluded, water adds fresnel horizon reflection, a sun glint and rain ripple rings, and scene lights carry a flicker weight applied from a per-frame CPU array. Live Edge captures verified daylight snow caps, daylight and night rain darkening, and lake water with shoreline foam and rain ripples; the wet darkening was eased from 0.80 to 0.88 so the player stays readable at night. README and ADR-033 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793373137.0379572,
-      "timestamp_str": "2026-10-30 18:12:17",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-weather-response-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-gpu-weather-response-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793373137.3266258,
-      "timestamp_str": "2026-10-30 18:12:17",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-overcast-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Weather-graded atmosphere: rain/snow shift the sky, horizon, fog colour and distance, dim the sun and flatten direct light. [2/3] Drifting cloud shadows over terrain and models; depth-graded turquoise shallows in the water. [3/3] Tests, README/ADR-034 and full gates.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793373270.531448,
-      "timestamp_str": "2026-10-30 18:14:30",
-      "agent": "opencode:gfx",
-      "impact_assessment": {
-        "why": "Snow and rain still happen under a bright blue sky and hard sun, and lakes read as one flat blue; the atmosphere does not yet match the weather.",
-        "benefits": "Overcast weather looks coherent, cloud shadows add motion to the ground, and water gains readable depth at the shoreline.",
-        "risks": "contract: none; dependency: none; concurrency: none; state: none; performance: extra weather maths, fog uniforms and a cloud-shadow term per fragment; visual: overcast grading can crush contrast or make night scenes too bright.",
-        "mitigation": "Scale weather target colours by daylight, keep fog and cloud-shadow amounts bounded, centralise the palette in one JS helper, and verify day/night clear, rain, snow and lake captures."
-      }
-    },
     {
       "task_id": "aldervale-gpu-overcast-v1",
       "phase": "phase 4",
@@ -259,6 +221,44 @@
       "status": "completed",
       "timestamp": 1793428683.8714175,
       "timestamp_str": "2026-10-31 09:38:03",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-smoke-pass-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Send chimney world positions for every cottage in the WebGL scene payload and add a failing-first payload test. [2/3] Draw drifting smoke puffs in the browser over the new chimney pots, reusing the light projection. [3/3] Update README/ADR-039, capture day and night, run the 4/4 gate and commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793431001.5346694,
+      "timestamp_str": "2026-10-31 10:16:41",
+      "agent": "opencode:web",
+      "impact_assessment": {
+        "why": "The cottages now have chimney pots but emit nothing, leaving the village skyline static and the new roof details feeling unfinished.",
+        "benefits": "Living chimney smoke that reads by day and night, stronger village atmosphere, and a scene payload other clients can reuse.",
+        "risks": "contract: scene JSON gains a smoke list; dependency: none; concurrency: none; state: none; performance: four projected puffs per house; visual: smoke must stay soft, drift upward and not cover the HUD or look like fog.",
+        "mitigation": "Cap puff alpha and radius, fade with rise, project through the shared camera matrix, skip off-screen sources, pin the payload fields and page hooks, and tune from day/night captures."
+      }
+    },
+    {
+      "task_id": "aldervale-smoke-pass-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Phase 4 green: 195 tests (107.3s), hygiene, guidelines/map and secrets pass 4/4. The WebGL scene now sends a smoke list (x/y/z/phase) for five cottage chimneys derived from variant offsets and yaw; the browser projects each source and drifts four cached 64px puffs 3.6m over a 20s cycle at 0.28 day / 0.34 night alpha, skipped in modals. README and ADR-039 updated; clear-day 1600x1000 and night captures verified the plumes. checklists: passed; commit follows, no push.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793433900.0106492,
+      "timestamp_str": "2026-10-31 11:05:00",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-smoke-pass-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-smoke-pass-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793433900.9765754,
+      "timestamp_str": "2026-10-31 11:05:00",
       "agent": "opencode:web"
     }
   ]
