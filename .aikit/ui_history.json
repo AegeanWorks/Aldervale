@@ -1,0 +1,16 @@
+[
+  {
+    "schema": 1,
+    "surface": "app",
+    "baseline_commit": "2ea168966aa1335f94e2d697480aa79e2a9eff31",
+    "contract_hash": "cf1b2cbba66acf1ff0b2c1352eac1a1a569fc9e4a963239b529927d3a5cb70a9",
+    "started_at": 1793458466.0936139,
+    "finished_at": 1793458523.9197505,
+    "strikes": 0,
+    "reviewer": "copilot:visual-review",
+    "allowed_removals": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": ""
+  }
+]
