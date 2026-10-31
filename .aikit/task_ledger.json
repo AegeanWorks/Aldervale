@@ -1,28 +1,22 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-well-pass-v1",
-    "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793437702.021212,
+    "task_id": "aldervale-windmill-v1",
+    "last_phase": "phase 2",
+    "active_phase": 2,
+    "status": "in_progress",
+    "updated_at": 1793437805.4417527,
     "owner": "opencode:web",
     "started_by": "opencode:web",
     "continuations": [],
-    "completed_at": 1793437702.3895447
+    "impact_assessment": {
+      "why": "The village skyline is static and has no landmark; a windmill adds a recognizable destination, a world feature and continuous animation.",
+      "benefits": "A rotating windmill visible from the spawn, a stronger skyline, eight baked blade frames shared by the pixel and GPU builds, and a warm window light at night.",
+      "risks": "contract: one new world entity on the deterministic layout; dependency: none; concurrency: none; state: none; growth: eight poses of roughly 130 faces; placement must stay dry, walkable, off the path and outside the quest route.",
+      "mitigation": "Place it via _walkable_near at village (-24,-18), keep the solid radius at 3m, assert both generated worlds contain it at the same coordinates, cap the pose set at eight, and verify the spawn and pixel-village captures."
+    }
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-gpu-hud-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Phase 4 green: 190 tests (162.4s), hygiene, guidelines/map and secrets pass 4/4. Graphical GPU HUD shipped: scene JSON sends hud_status (name, level, gold, HP/STA/XP, potions, weapon/armor, quest), the browser draws a compact/full status panel in the five-row scrim area, suppresses exactly those ASCII rows during play, keeps messages/location/minimap and falls back to ASCII below 11px per row or in modal states. Added the payload/page tests, README and ADR-036; hud_status is separate from the existing status:ready field. Live captures verified the full panel at 1600x1000, the ASCII fallback at 1200x800, and the inventory modal without the panel. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793376824.3487356,
-      "timestamp_str": "2026-10-30 19:13:44",
-      "agent": "opencode:gfx"
-    },
     {
       "task_id": "aldervale-gpu-hud-v1",
       "phase": "completed",
@@ -260,6 +254,23 @@
       "timestamp": 1793437702.3895462,
       "timestamp_str": "2026-10-31 12:08:22",
       "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-windmill-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Add failing tests for the windmill mesh, eight blade poses, atlas entry and village placement. [2/3] Build the windmill tower, sails and eight blade frames; place it on the west hill, cycle its pose in the world and add its window light to the GPU scene. [3/3] Update README/ADR-042, capture the village, run the 4/4 gate and commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793437805.4417527,
+      "timestamp_str": "2026-10-31 12:10:05",
+      "agent": "opencode:web",
+      "impact_assessment": {
+        "why": "The village skyline is static and has no landmark; a windmill adds a recognizable destination, a world feature and continuous animation.",
+        "benefits": "A rotating windmill visible from the spawn, a stronger skyline, eight baked blade frames shared by the pixel and GPU builds, and a warm window light at night.",
+        "risks": "contract: one new world entity on the deterministic layout; dependency: none; concurrency: none; state: none; growth: eight poses of roughly 130 faces; placement must stay dry, walkable, off the path and outside the quest route.",
+        "mitigation": "Place it via _walkable_near at village (-24,-18), keep the solid radius at 3m, assert both generated worlds contain it at the same coordinates, cap the pose set at eight, and verify the spawn and pixel-village captures."
+      }
     }
   ]
 }

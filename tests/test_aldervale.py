@@ -307,6 +307,19 @@ class TestMesh(unittest.TestCase):
         self.assertGreater(max(ys), 2.10)
         self.assertLess(max(ys), 2.40)
 
+    def test_windmill_has_a_tower_and_eight_blade_frames(self):
+        mill = models.windmill(frame=0)
+        ys = [v[1] for v in mill.verts]
+        xs = [v[0] for v in mill.verts]
+        self.assertGreaterEqual(len(mill.faces), 100)
+        self.assertGreater(max(ys), 9.5)
+        self.assertLess(max(ys), 10.6)
+        self.assertGreaterEqual(max(xs) - min(xs), 8.5)
+        shapes = {tuple(sorted({(round(v[0], 1), round(v[1], 1))
+                                for v in models.windmill(f).verts}))
+                  for f in range(8)}
+        self.assertEqual(len(shapes), 8, "eight distinct blade frames")
+
 
 class TestStudio(unittest.TestCase):
     def test_encode_screen_keeps_cells_and_colours(self):
@@ -717,6 +730,13 @@ class TestWebGL(unittest.TestCase):
         self.assertIn("float metal", PLAY3D_HTML)
         self.assertIn("float rimLight", PLAY3D_HTML)
         self.assertIn("float sheen", PLAY3D_HTML)
+
+    def test_windmill_atlas_exposes_eight_blade_poses(self):
+        atlas = GLMeshAtlas().build(keys=["windmill"])
+        self.assertEqual(len(atlas.meshes), 8)
+        for i in range(8):
+            self.assertIsNotNone(atlas.mesh_for("windmill",
+                                                "blades%d" % i))
 
 
 class TestRules(unittest.TestCase):

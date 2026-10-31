@@ -111,6 +111,8 @@ world, camera, meshes and clock.
 - The village well carries a block masonry rim with moss, three thatch rows
   per slope, a ridge cap and finial, and a longer windlass drum with an iron
   crank.
+- The village skyline includes a rotating eight-pose stone windmill with a
+  warm window light in both pixel and GPU scenes.
 - Rain darkens figures and roofs and adds a wet sheen; snow caps up-facing
   surfaces, while fire and torch flames stay clear. Fires, torches and windows
   flicker.

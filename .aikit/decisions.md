@@ -308,6 +308,14 @@ Context, Decision and Consequences lines.
 - **Consequences**: Cottage roofs gain a layered thatch outline, visible eaves and corner depth from the play camera. The extra 95 faces are baked once per house variant, so the sprite atlas and WebGL bundle grow by a few hundred faces while runtime draw calls are unchanged. No simulation, save or control change. The house test pins at least 400 faces and a ridge above 3.70m; the live village capture verifies the result.
 - Cross-principle check: PRINCIPLE-010 (bounded face growth), PRINCIPLE-012 (procedural model, no new assets), PRINCIPLE-014 (mesh test), PRINCIPLE-015 (live village capture).
 
+### ADR-042: Rotating village windmill
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: The village skyline lacked a recognizable landmark and the west approach had no continuously animated destination.
+- **Decision**: Add a procedural stone windmill with four sails, eight baked blade poses, a lit window and a solid walkable-world entity. The deterministic world cycles its pose and the GPU scene projects the warm window light.
+- **Consequences**: The windmill is visible from the village approach in both render paths and adds no assets or simulation state. Atlas baking grows by eight poses; mesh, atlas and world tests pin the geometry, animation and placement.
+- Cross-principle check: PRINCIPLE-010 (bounded eight-pose atlas), PRINCIPLE-012 (procedural geometry, no new assets), PRINCIPLE-014 (mesh/world tests), PRINCIPLE-015 (regenerated village inspection capture).
+
 ### ADR-039: Chimney smoke from the scene payload
 - **Date**: 2026-10-31
 - **Status**: Accepted

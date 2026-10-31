@@ -304,6 +304,15 @@ class TestWorldSim(unittest.TestCase):
         self.assertIn("castle", models)
         self.assertIn("shrine", models)
 
+    def test_village_has_a_windmill(self):
+        w = World(3, None)
+        mills = [e for e in w.entities if e.model == "windmill"]
+        self.assertEqual(len(mills), 1)
+        mill = mills[0]
+        self.assertTrue(mill.solid)
+        self.assertGreaterEqual(mill.radius, 3.0)
+        self.assertIn(mill.pose, {"blades%d" % i for i in range(8)})
+
     def test_full_quest_chain(self):
         w = self._world()
         self.assertEqual(w.quest, "none")

@@ -61,6 +61,44 @@
         "score": 90,
         "reviewed_at": "2026-10-28T11:49:29"
       }
+    },
+    {
+      "path": "assets/screenshots/2026-10-31-index.png",
+      "alt": "Aldervale interface at 2026-10-31",
+      "caption": "Aldervale interface captured from projects/aldervale/.inspect/index.html",
+      "commit": "f1fd9ba8c72c21fce92e04192e9aa207c45f01b1",
+      "taken_at": "2026-10-31",
+      "viewport": "1440x900",
+      "width": 1440,
+      "height": 900,
+      "status": "approved",
+      "review": {
+        "status": "approved",
+        "reviewer": "human:owner",
+        "method": "vision",
+        "notes": "Aldervale Studio 1440x900 capture: ASCII game title scene with steel and starlight logo, controls, scale 1.34, fit window enabled.",
+        "score": 90,
+        "reviewed_at": "2026-10-31T15:37:03"
+      }
+    },
+    {
+      "path": "assets/screenshots/2026-10-31-index.png",
+      "alt": "Aldervale interface at 2026-10-31",
+      "caption": "Aldervale interface captured from projects/aldervale/.inspect/index.html",
+      "commit": "f1fd9ba8c72c21fce92e04192e9aa207c45f01b1",
+      "taken_at": "2026-10-31",
+      "viewport": "1440x900",
+      "width": 1440,
+      "height": 900,
+      "status": "approved",
+      "review": {
+        "status": "approved",
+        "reviewer": "human:owner",
+        "method": "vision",
+        "notes": "Aldervale Studio 1440x900 capture: ASCII game title scene with steel and starlight logo, controls, scale 1.34, fit window enabled.",
+        "score": 90,
+        "reviewed_at": "2026-10-31T15:36:30"
+      }
     }
   ],
   "model": "community/scriptsnsenses-sys/flux-2-dev-free"

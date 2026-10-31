@@ -734,6 +734,35 @@ def well():
     return b.build()
 
 
+def windmill(frame=0):
+    """A stone windmill with four sails; frame 0-7 turns the sails."""
+    b = MeshBuilder()
+    b.cylinder(0.0, 0.0, 0.0, 2.3, 2.2, 10, STONE_D)
+    b.cylinder(0.0, 2.0, 0.0, 2.0, 4.6, 10, STONE)
+    b.cylinder(0.0, 4.9, 0.0, 2.06, 0.18, 10, STONE_D)
+    b.cone(0.0, 6.5, 0.0, 2.25, 2.2, 10, ROOF)
+    b.box(0.0, 1.1, 2.02, 1.0, 2.0, 0.16, WOOD)
+    b.box(0.0, 1.1, 1.93, 0.72, 1.8, 0.06, WOOD_D)
+    b.box(0.0, 4.5, 1.92, 0.55, 0.65, 0.10, WOOD_D)
+    b.box(0.0, 4.5, 1.98, 0.42, 0.50, 0.04, C(255, 196, 110), emissive=True)
+    hub_y, hub_z = 5.6, 2.25
+    b.box(0.0, hub_y, hub_z, 0.50, 0.50, 0.30, IRON)
+    theta = frame * math.pi / 8.0
+    for i in range(4):
+        a = theta + i * math.pi / 2.0
+        b.box(0.0, hub_y + 2.25, hub_z + 0.08, 0.16, 4.5, 0.10, WOOD_D,
+              rz=a, pivot=(0.0, hub_y, hub_z))
+        b.box(0.38, hub_y + 2.25, hub_z + 0.02, 0.62, 3.7, 0.05,
+              C(216, 204, 178), rz=a, pivot=(0.0, hub_y, hub_z))
+        for y in (1.2, 2.6, 3.8):
+            b.box(0.0, hub_y + y, hub_z + 0.10, 1.15, 0.08, 0.07, WOOD,
+                  rz=a, pivot=(0.0, hub_y, hub_z))
+        if i == 0:
+            b.box(0.38, hub_y + 4.15, hub_z, 0.30, 0.55, 0.04,
+                  RED_CLOTH, rz=a, pivot=(0.0, hub_y, hub_z))
+    return b.build()
+
+
 def fence():
     b = MeshBuilder()
     b.box(0.0, 0.5, 0.0, 1.8, 0.09, 0.07, WOOD_D)

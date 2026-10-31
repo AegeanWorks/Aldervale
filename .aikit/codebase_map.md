@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `31`
 - **Total Classes**: `70`
-- **Total Top-Level Functions**: `226`
-- **Total Class Methods**: `445`
-- **Total Source Lines**: `15778`
+- **Total Top-Level Functions**: `227`
+- **Total Class Methods**: `448`
+- **Total Source Lines**: `15858`
 
 ---
 
@@ -44,7 +44,7 @@
 ### [`aldervale/atlas.py`](aldervale/atlas.py)
 > *Sprite atlas: bakes every (model, pose, yaw) combination at load time.*
 
-**Size**: `201` lines (`9460` bytes)
+**Size**: `207` lines (`9792` bytes)
 
 **Classes:**
 - `class SpriteAtlas` - *Baked sprite frames lookup: (model_key, pose_name) -> [yaw frames].*
@@ -208,7 +208,7 @@
 ### [`aldervale/gfxatlas.py`](aldervale/gfxatlas.py)
 > *Pixel sprite atlas and source-mesh cache.*
 
-**Size**: `358` lines (`12965` bytes)
+**Size**: `359` lines (`13000` bytes)
 
 **Classes:**
 - `class PixelAtlas` - *Baked pixel frames: (model_key, pose_name) -> [PixelSprite].*
@@ -461,7 +461,7 @@
 ### [`aldervale/models.py`](aldervale/models.py)
 > *Every 3D model in the realm: actors, creatures, flora and architecture.*
 
-**Size**: `940` lines (`41644` bytes)
+**Size**: `969` lines (`42944` bytes)
 
 **Functions:**
 - `def C(r, g, b)`
@@ -483,6 +483,7 @@
 - `def rock(seed, big)`
 - `def house(variant)` - *A timber-framed cottage; windows glow warm at night (emissive).*
 - `def well()`
+- `def windmill(frame)` - *A stone windmill with four sails; frame 0-7 turns the sails.*
 - `def fence()`
 - `def cart()`
 - `def anvil()`
@@ -693,7 +694,7 @@
 ### [`aldervale/webglscene.py`](aldervale/webglscene.py)
 > *World and model payloads for the WebGL client.*
 
-**Size**: `308` lines (`10878` bytes)
+**Size**: `315` lines (`11137` bytes)
 
 **Classes:**
 - `class MeshAtlas` - *Minimal atlas for the GPU path: source meshes, no baked sprites.*
@@ -716,7 +717,7 @@
 ### [`aldervale/world.py`](aldervale/world.py)
 > *The world of Aldervale: generation, simulation, quests and persistence.*
 
-**Size**: `817` lines (`34506` bytes)
+**Size**: `825` lines (`34934` bytes)
 
 **Classes:**
 - `class World` - *Owns terrain, entities, the player, quests and the world clock.*
@@ -765,7 +766,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `962` lines (`39110` bytes)
+**Size**: `982` lines (`40044` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -806,6 +807,7 @@
   - Method `.test_campfire_has_a_stone_ring_logs_and_layered_flames()`
   - Method `.test_torch_flame_is_compact_and_basketed()`
   - Method `.test_well_has_a_stone_rim_thatch_and_crank()`
+  - Method `.test_windmill_has_a_tower_and_eight_blade_frames()`
 - `class TestStudio`
   - Method `.test_encode_screen_keeps_cells_and_colours()`
   - Method `.test_collect_models_samples_yaws_and_skips_missing()`
@@ -846,6 +848,7 @@
   - Method `.test_webgl_page_draws_additive_light_glow()`
   - Method `.test_webgl_page_draws_chimney_smoke()`
   - Method `.test_webgl_page_shades_metal_with_rim_and_sheen()`
+  - Method `.test_windmill_atlas_exposes_eight_blade_poses()`
 - `class TestRules`
   - Method `.test_damage_roll_bounds()`
   - Method `.test_damage_roll_defence_reduces()`
@@ -885,7 +888,7 @@
 ### [`tests/test_integration.py`](tests/test_integration.py)
 > *Integration tier: world generation, quest chain, rendering and the CLI.*
 
-**Size**: `1746` lines (`66702` bytes)
+**Size**: `1755` lines (`67057` bytes)
 
 **Classes:**
 - `class TestTerrain`
@@ -916,6 +919,7 @@
   - Method `._world()`
   - Method `.test_deterministic_generation()`
   - Method `.test_spawns_present()`
+  - Method `.test_village_has_a_windmill()`
   - Method `.test_full_quest_chain()`
   - Method `.test_save_load_roundtrip()`
   - Method `.test_weather_cycles_without_consuming_game_rng()`

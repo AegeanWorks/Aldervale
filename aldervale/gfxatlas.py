@@ -31,8 +31,8 @@ _TARGET_HEIGHT = {
     "tree_oak": 96, "tree_pine": 90, "tree_birch": 82, "tree_dead": 66,
     "bush": 36, "rock_s": 26, "rock_b": 44,
     "house0": 84, "house1": 84, "house2": 78,
-    "well": 58, "fence": 36, "cart": 42, "anvil": 28, "haystack": 48,
-    "campfire": 26, "torch": 62,
+    "well": 58, "windmill": 96, "fence": 36, "cart": 42, "anvil": 28,
+    "haystack": 48, "campfire": 26, "torch": 62,
     "chest_c": 32, "chest_o": 32, "shrine": 54,
     "banner0": 58, "banner1": 58,
     "gold": 16, "potion": 20, "pelt": 14, "bone": 16, "amulet": 22,
@@ -43,8 +43,9 @@ _TARGET_HEIGHT = {
 _YAW_STEPS = {
     "castle": 4, "house0": 8, "house1": 8, "house2": 8,
     "tree_oak": 8, "tree_pine": 8, "tree_birch": 8, "tree_dead": 8,
-    "well": 8, "fence": 8, "cart": 8, "haystack": 8, "bush": 8,
-    "rock_s": 8, "rock_b": 8, "shrine": 8, "banner0": 8, "banner1": 8,
+    "well": 8, "windmill": 8, "fence": 8, "cart": 8, "haystack": 8,
+    "bush": 8, "rock_s": 8, "rock_b": 8, "shrine": 8, "banner0": 8,
+    "banner1": 8,
     "campfire": 8, "torch": 8, "gold": 8, "potion": 8, "pelt": 8,
     "bone": 8, "amulet": 8, "chest_c": 8, "chest_o": 8,
 }

@@ -204,6 +204,13 @@ def scene(game, world, seq=0):
             col = (1.0, 0.74, 0.42)
             radius = 6.0
             flicker = 0.25
+        elif ent.model == "windmill":
+            lx = ent.x + math.sin(ent.yaw) * 1.9
+            lz = ent.z + math.cos(ent.yaw) * 1.9
+            ly = ent.ground_y + 4.5
+            col = (1.0, 0.72, 0.40)
+            radius = 6.0
+            flicker = 0.2
         elif ent.model == "campfire":
             lx, lz, ly = ent.x, ent.z, ent.ground_y + 0.55
             col = (1.0, 0.52, 0.20)

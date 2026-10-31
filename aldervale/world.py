@@ -148,6 +148,11 @@ class World:
             hx, hz = self._walkable_near(vx + dx, vz + dz, 10.0)
             self._add(ent.Prop(self._next_eid(), model, hx, hz, 4.3, yaw=yaw,
                                solid=True, radius=2.6))
+        wmx, wmz = self._walkable_near(vx - 6, vz - 18, 8.0)
+        mill = ent.Prop(self._next_eid(), "windmill", wmx, wmz, 10.5,
+                        yaw=0.0, solid=True, radius=3.0, name="Windmill")
+        mill.pose = "blades0"
+        self._add(mill)
         self._add(ent.Prop(self._next_eid(), "anvil", vx + 13, vz + 3, 0.8,
                            solid=True, radius=0.6, name="Anvil"))
         self._add(ent.Prop(self._next_eid(), "cart", vx - 14, vz + 2, 1.35,
@@ -410,6 +415,9 @@ class World:
                     e.model = "chest_o"
             if e.model in ("campfire", "torch"):
                 e.pose = "fire%d" % ((fire_idx + ent.eid_hash(e.eid)) % 4)
+            elif e.model == "windmill":
+                e.pose = "blades%d" % ((int(self.time * 2.0) +
+                                        ent.eid_hash(e.eid)) % 8)
             elif e.model.startswith("tree_") and e.model != "tree_dead":
                 e.pose = "sway%d" % ((sway + ent.eid_hash(e.eid)) % 2)
             elif e.model.startswith("banner"):

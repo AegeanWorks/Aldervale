@@ -110,6 +110,12 @@ MODEL_SPECS = {
     "house2": _spec(models.house, {"idle": {}}, size=(5.4, 4.0), height=3.7, cells=16,
                     kwargs={"variant": 2}),
     "well": _spec(models.well, {"idle": {}}, size=(2.4, 2.6), height=2.4, cells=16),
+    "windmill": _spec(models.windmill, {
+        "blades0": {"frame": 0}, "blades1": {"frame": 1},
+        "blades2": {"frame": 2}, "blades3": {"frame": 3},
+        "blades4": {"frame": 4}, "blades5": {"frame": 5},
+        "blades6": {"frame": 6}, "blades7": {"frame": 7},
+    }, size=(9.8, 9.8), height=10.5, cells=28, dist=14.0),
     "fence": _spec(models.fence, {"idle": {}}, size=(2.0, 1.3), height=1.15, cells=14),
     "cart": _spec(models.cart, {"idle": {}}, size=(2.6, 1.5), height=1.35, cells=14),
     "anvil": _spec(models.anvil, {"idle": {}}, size=(1.2, 0.9), height=0.8, cells=18),
