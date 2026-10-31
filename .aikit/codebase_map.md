@@ -9,8 +9,8 @@
 - **Total Python Modules**: `31`
 - **Total Classes**: `70`
 - **Total Top-Level Functions**: `226`
-- **Total Class Methods**: `444`
-- **Total Source Lines**: `15748`
+- **Total Class Methods**: `445`
+- **Total Source Lines**: `15778`
 
 ---
 
@@ -461,7 +461,7 @@
 ### [`aldervale/models.py`](aldervale/models.py)
 > *Every 3D model in the realm: actors, creatures, flora and architecture.*
 
-**Size**: `917` lines (`40547` bytes)
+**Size**: `940` lines (`41644` bytes)
 
 **Functions:**
 - `def C(r, g, b)`
@@ -765,7 +765,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `955` lines (`38847` bytes)
+**Size**: `962` lines (`39110` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -805,6 +805,7 @@
   - Method `.test_boulders_are_rounded()`
   - Method `.test_campfire_has_a_stone_ring_logs_and_layered_flames()`
   - Method `.test_torch_flame_is_compact_and_basketed()`
+  - Method `.test_well_has_a_stone_rim_thatch_and_crank()`
 - `class TestStudio`
   - Method `.test_encode_screen_keeps_cells_and_colours()`
   - Method `.test_collect_models_samples_yaws_and_skips_missing()`

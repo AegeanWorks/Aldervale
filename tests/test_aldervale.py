@@ -300,6 +300,13 @@ class TestMesh(unittest.TestCase):
         emissive = sum(1 for f in torch.faces if f[5])
         self.assertGreaterEqual(emissive, 20)
 
+    def test_well_has_a_stone_rim_thatch_and_crank(self):
+        well = models.well()
+        ys = [v[1] for v in well.verts]
+        self.assertGreaterEqual(len(well.faces), 180)
+        self.assertGreater(max(ys), 2.10)
+        self.assertLess(max(ys), 2.40)
+
 
 class TestStudio(unittest.TestCase):
     def test_encode_screen_keeps_cells_and_colours(self):

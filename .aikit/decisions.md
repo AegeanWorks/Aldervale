@@ -323,3 +323,11 @@ Context, Decision and Consequences lines.
 - **Decision**: In the model fragment shader, add a half-vector sheen gated by a smoothstep on the vertex colour brightness (so steel and gold catch it while foliage and cloth do not) and a soft view-facing rim term. Both are capped, scale with sun and daylight, and stay separate from the existing wet specular.
 - **Consequences**: Armour, shields and roof edges catch a readable highlight, and silhouettes separate from the terrain without new geometry, textures or payload fields. The cost is about eight ALU operations per model fragment. Tests pin the shader hooks, and a daylight village capture verifies the highlight against the previous frame.
 - Cross-principle check: PRINCIPLE-010 (bounded ALU cost), PRINCIPLE-012 (no new assets), PRINCIPLE-014 (page test), PRINCIPLE-015 (live daylight capture).
+
+### ADR-041: Detailed village well
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: The well sits in the middle of the village square but was a plain stone drum with a smooth two-slab roof, the least detailed prop after the roofs and fire were upgraded.
+- **Decision**: Add an eight-block stone rim with alternating tones and three moss patches, three thatch rows per roof slope plus a ridge cap and gold finial, a longer windlass drum with an iron crank and grip, and a small bucket handle. The well grows from 102 to 244 faces and reaches 2.323m, still under the 2.4m atlas height.
+- **Consequences**: The village centrepiece now matches the cottages with layered thatch and masonry detail, and the windlass reads at player eye level. The extra faces are baked once into the sprite atlas and GPU bundle; no simulation, save or control change. The mesh test pins at least 180 faces and a height between 2.10m and 2.40m; the village pixel capture verifies the result.
+- Cross-principle check: PRINCIPLE-010 (bounded face growth), PRINCIPLE-012 (procedural model, no new assets), PRINCIPLE-014 (mesh test), PRINCIPLE-015 (live village capture).

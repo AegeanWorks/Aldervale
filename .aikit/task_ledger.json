@@ -1,55 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-shading-pass-v1",
+    "task_id": "aldervale-well-pass-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793435239.6247365,
+    "updated_at": 1793437702.021212,
     "owner": "opencode:web",
     "started_by": "opencode:web",
     "continuations": [],
-    "completed_at": 1793435239.9779685
+    "completed_at": 1793437702.3895447
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-gpu-sky-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 190 tests (101.8s), hygiene, guidelines/map and secrets pass 4/4. Sky pass shipped: layered drifting fbm clouds with a high wisp layer, weather cloud bias (scattered clear / overcast rain-snow), sun-lit cloud tint, detail and horizon shading, wider sun/moon halos, and a rare double-pulse rain lightning overlay via lightningAt() and uFlash. Cloud frequency and opacity were tuned twice from captures to avoid vertical bands and oversized flat blobs. Live Edge captures verified clear day puffs, overcast rain and snow skies, and a night clear sky with stars and a moon halo; lightning is wired and compiled but the still captures did not catch a flash. README and ADR-035 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793374741.5802727,
-      "timestamp_str": "2026-10-30 18:39:01",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-sky-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-gpu-sky-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793374741.9112353,
-      "timestamp_str": "2026-10-30 18:39:01",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-hud-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Structured HUD status in the scene JSON: name, level, gold, HP, stamina, XP, potions, weapon/armor and quest. [2/3] Graphical status panel in the GPU client; suppress the ASCII bottom status rows while keeping messages, location plate and minimap; simplify the page header. [3/3] Tests, README/ADR-036 and full gates.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793376001.4733999,
-      "timestamp_str": "2026-10-30 19:00:01",
-      "agent": "opencode:gfx",
-      "impact_assessment": {
-        "why": "The 3D scene is polished but its main status block is still five rows of ASCII text, which reads as a terminal overlay rather than a game HUD.",
-        "benefits": "Readable bars and gear/quest text, a cleaner view, and the same simulation data driving both the terminal and GPU HUDs.",
-        "risks": "contract: the scene JSON gains a status object; dependency: none; concurrency: none; state: none; performance: a few text/rect draws per frame; visual: the panel must fit the existing bottom scrim, not hide messages, and fall back to ASCII on small stages.",
-        "mitigation": "Only draw the panel when the server marks the status visible and the stage is at least 12.5px per row; skip exactly the five status rows; keep messages above the panel; test payload fields and live captures."
-      }
-    },
     {
       "task_id": "aldervale-gpu-hud-v1",
       "phase": "phase 4",
@@ -259,6 +221,44 @@
       "status": "completed",
       "timestamp": 1793435239.9779696,
       "timestamp_str": "2026-10-31 11:27:19",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-well-pass-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Add a failing-first well test and detail the village well with an eight-block stone rim, moss patches, three thatch rows per slope, a ridge cap and finial, a longer windlass drum and an iron crank. [2/2] Update README/ADR-041, capture the village, run the 4/4 gate and commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793437532.087746,
+      "timestamp_str": "2026-10-31 12:05:32",
+      "agent": "opencode:web",
+      "impact_assessment": {
+        "why": "The well is the village centrepiece but was a plain stone drum with a smooth roof, the least detailed prop in the square.",
+        "benefits": "A masonry rim, moss and layered thatch that match the cottages, plus a readable windlass and crank at the player's eye level.",
+        "risks": "contract: none, visual-only; dependency: none; concurrency: none; state: none; growth: 102 to 244 faces, max height 2.323m under the 2.4m spec.",
+        "mitigation": "Keep the new rim inside the existing 2.4m bounds, pin face count and height in the test, and verify the village pixel capture before the gate."
+      }
+    },
+    {
+      "task_id": "aldervale-well-pass-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 green: 197 tests (106.2s), hygiene, guidelines/map and secrets pass 4/4. The well now has an eight-block stone rim, three moss patches, three thatch rows per slope, a ridge cap and gold finial, a longer windlass drum with an iron crank and grip, and a bucket handle; 102 to 244 faces, max height 2.323m under the 2.4m spec. README and ADR-041 updated; village pixel capture verified the rim, thatch and crank. checklists: passed; commit follows, no push.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793437702.021212,
+      "timestamp_str": "2026-10-31 12:08:22",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-well-pass-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-well-pass-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793437702.3895462,
+      "timestamp_str": "2026-10-31 12:08:22",
       "agent": "opencode:web"
     }
   ]

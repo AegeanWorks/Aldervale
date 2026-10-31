@@ -108,6 +108,9 @@ world, camera, meshes and clock.
   and a chimney pot. Every cottage sends its chimney position with the scene,
   and the browser drifts four soft puffs above it, so the skyline moves by day
   and night.
+- The village well carries a block masonry rim with moss, three thatch rows
+  per slope, a ridge cap and finial, and a longer windlass drum with an iron
+  crank.
 - Rain darkens figures and roofs and adds a wet sheen; snow caps up-facing
   surfaces, while fire and torch flames stay clear. Fires, torches and windows
   flicker.
