@@ -3,258 +3,27 @@
   "active_task": {
     "task_id": "aldervale-windmill-v1",
     "last_phase": "phase 2",
-    "active_phase": 2,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793437805.4417527,
     "owner": "opencode:web",
     "started_by": "opencode:web",
-    "continuations": [],
+    "continuations": [
+      {
+        "agent": "copilot:aldervale",
+        "from": "opencode:web",
+        "at": 1793458807.4437387
+      }
+    ],
     "impact_assessment": {
       "why": "The village skyline is static and has no landmark; a windmill adds a recognizable destination, a world feature and continuous animation.",
       "benefits": "A rotating windmill visible from the spawn, a stronger skyline, eight baked blade frames shared by the pixel and GPU builds, and a warm window light at night.",
       "risks": "contract: one new world entity on the deterministic layout; dependency: none; concurrency: none; state: none; growth: eight poses of roughly 130 faces; placement must stay dry, walkable, off the path and outside the quest route.",
       "mitigation": "Place it via _walkable_near at village (-24,-18), keep the solid radius at 3m, assert both generated worlds contain it at the same coordinates, cap the pose set at eight, and verify the spawn and pixel-village captures."
-    }
+    },
+    "completed_at": 1793458807.4437397
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-gpu-hud-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-gpu-hud-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793376825.7437892,
-      "timestamp_str": "2026-10-30 19:13:45",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-hud-compact-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Add a failing-first compact-layout test and fix the GPU status panel so the gear line clears the HP/STA/XP bars at 11-13px rows; verify in the live /play3d page at a mid-size stage. [2/2] Run the full project gate and commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793397861.2560358,
-      "timestamp_str": "2026-10-31 01:04:21",
-      "agent": "opencode:web",
-      "impact_assessment": {
-        "why": "At 11-13px rows the compact GPU HUD draws the gear line through the HP/STA/XP bars; the full >=80px layout was verified but the compact branch was not.",
-        "benefits": "A readable HUD at common laptop window sizes without leaving the 5.2-row scrim or falling back to ASCII.",
-        "risks": "contract: none, drawing-only; dependency: none; concurrency: none; state: none; visual: title, bars, gear and quest must stay inside the 5.2-row panel and clear each other down to the 11px threshold; test: page-string assertions only, so the live capture remains the visual proof.",
-        "mitigation": "Derive compact row positions from the panel height, clamp the gear baseline above the bar bottom, pin the geometry in a unit test, and verify at a compact stage plus the existing full stage."
-      }
-    },
-    {
-      "task_id": "aldervale-gpu-hud-compact-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 191 tests (92.9s), hygiene, guidelines/map and secrets pass 4/4. Compact GPU HUD fixed: 13px title, 8px bars at y+19 with 9px labels, gear baseline clamped above barBottom, 10px quest line at y+h-5; no collisions at 11-13px rows. Live captures verified 1300x900 compact, 2200x1400 full and 1000x700 ASCII fallback. Added test_webgl_compact_hud_keeps_rows_apart. README and ADR unchanged because the documented compact/full/fallback behaviour is unchanged. checklists: passed; commit follows, no push.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793399357.7703092,
-      "timestamp_str": "2026-10-31 01:29:17",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-gpu-hud-compact-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-gpu-hud-compact-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793399366.4767349,
-      "timestamp_str": "2026-10-31 01:29:26",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-fire-pass-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Failing-first model tests, then rebuild the campfire (ash bed, 8-stone ring, four charred logs with ember tips, four layered flame tongues) and slim the torch flame with an iron basket. [2/3] Add an additive light glow to the WebGL HUD for campfires, torches, shrines and lit windows. [3/3] Update README/ADR, capture day and night scenes, run the 4/4 gate and commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793427959.999199,
-      "timestamp_str": "2026-10-31 09:25:59",
-      "agent": "opencode:web",
-      "impact_assessment": {
-        "why": "The fire props are the coarsest models in the scene: the campfire reads as a solid orange cone and gate torches carry half-metre flames; the GPU scene also has no bloom around its point lights.",
-        "benefits": "Readable layered fire silhouettes, warmer and deeper night lighting around fires and windows, and a more believable village at dusk without new assets or dependencies.",
-        "risks": "contract: none, visual-only; dependency: none; concurrency: none; state: none; performance: up to six radial gradients per HUD frame; visual: glow must stay subtle by day and must not cover the HUD panel, and model bounds must stay inside the atlas spec size/height.",
-        "mitigation": "Cap glow radius and alpha, scale alpha by 1-daylight, skip modal states and lights behind the camera, update the atlas spec bounds, pin face/emissive/bounds and page hooks in tests, and verify day, night and small-stage captures."
-      }
-    },
-    {
-      "task_id": "aldervale-fire-pass-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Phase 4 green: 194 tests (97.1s), hygiene, guidelines/map and secrets pass 4/4. Rebuilt the campfire (ash bed, eight-stone ring, four charred logs with ember tips, four flame tongues and sparks; bounds 1.5x1.5x0.9) and the torch (pronged iron basket, three stacked flames, max height 2.085m). Added a projected additive light glow for up to six lights, scaled by 1-daylight with flicker and skipped in modals or behind the camera. README and ADR-037 updated. Day (1600x1000) and night (2200x1400) captures verified. checklists: passed; commit follows, no push.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793428374.0399802,
-      "timestamp_str": "2026-10-31 09:32:54",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-fire-pass-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-fire-pass-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793428374.389663,
-      "timestamp_str": "2026-10-31 09:32:54",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-roof-pass-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Extend the cottage roof with six thatch rows per slope, a rounded ridge with end caps, eaves fascia and corner brackets, plus a chimney pot; pin the detail with the house mesh test. [2/2] Update README/ADR-038, capture the village, run the 4/4 gate and commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793428544.703983,
-      "timestamp_str": "2026-10-31 09:35:44",
-      "agent": "opencode:web",
-      "impact_assessment": {
-        "why": "Cottages are the dominant village silhouette, but their roofs were smooth slabs with only three ridge strips and no eaves depth.",
-        "benefits": "A layered thatch silhouette, deeper eaves and stronger cottage architecture at the same low-poly budget.",
-        "risks": "contract: none, visual-only; dependency: none; concurrency: none; state: none; growth: 356 to 451 faces per house pose, max height 3.77m under the 4.3m spec; visual: alternating straw tones must not read as a ladder.",
-        "mitigation": "Use two close straw tones, keep the ridge radius small, pin face count and ridge height in the test, and verify the village in a live capture."
-      }
-    },
-    {
-      "task_id": "aldervale-roof-pass-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 194 tests (100.3s), hygiene, guidelines/map and secrets pass 4/4. Cottage roofs now stack six thatch rows per slope in two straw tones, a rounded ridge with end caps, eaves fascia, four corner brackets and a chimney pot; 356 to 451 faces per house pose, max height 3.77m under the 4.3m spec. README and ADR-038 updated; a 1600x1000 village capture verified the eaves, brackets and ridge. checklists: passed; commit follows, no push.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793428683.5375714,
-      "timestamp_str": "2026-10-31 09:38:03",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-roof-pass-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-roof-pass-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793428683.8714175,
-      "timestamp_str": "2026-10-31 09:38:03",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-smoke-pass-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Send chimney world positions for every cottage in the WebGL scene payload and add a failing-first payload test. [2/3] Draw drifting smoke puffs in the browser over the new chimney pots, reusing the light projection. [3/3] Update README/ADR-039, capture day and night, run the 4/4 gate and commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793431001.5346694,
-      "timestamp_str": "2026-10-31 10:16:41",
-      "agent": "opencode:web",
-      "impact_assessment": {
-        "why": "The cottages now have chimney pots but emit nothing, leaving the village skyline static and the new roof details feeling unfinished.",
-        "benefits": "Living chimney smoke that reads by day and night, stronger village atmosphere, and a scene payload other clients can reuse.",
-        "risks": "contract: scene JSON gains a smoke list; dependency: none; concurrency: none; state: none; performance: four projected puffs per house; visual: smoke must stay soft, drift upward and not cover the HUD or look like fog.",
-        "mitigation": "Cap puff alpha and radius, fade with rise, project through the shared camera matrix, skip off-screen sources, pin the payload fields and page hooks, and tune from day/night captures."
-      }
-    },
-    {
-      "task_id": "aldervale-smoke-pass-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Phase 4 green: 195 tests (107.3s), hygiene, guidelines/map and secrets pass 4/4. The WebGL scene now sends a smoke list (x/y/z/phase) for five cottage chimneys derived from variant offsets and yaw; the browser projects each source and drifts four cached 64px puffs 3.6m over a 20s cycle at 0.28 day / 0.34 night alpha, skipped in modals. README and ADR-039 updated; clear-day 1600x1000 and night captures verified the plumes. checklists: passed; commit follows, no push.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793433900.0106492,
-      "timestamp_str": "2026-10-31 11:05:00",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-smoke-pass-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-smoke-pass-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793433900.9765754,
-      "timestamp_str": "2026-10-31 11:05:00",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-shading-pass-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Add a failing-first page test and a metal-aware sheen plus view-facing rim light to the WebGL model shader. [2/2] Update README/ADR-040, capture the daylight village, run the 4/4 gate and commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793435057.500359,
-      "timestamp_str": "2026-10-31 11:24:17",
-      "agent": "opencode:web",
-      "impact_assessment": {
-        "why": "GPU models were lit only by diffuse and point lights, so steel armour looked matte and silhouettes merged into the terrain at night.",
-        "benefits": "Steel and gold pick up a sun highlight, plaster and roof edges gain depth, and figures read more clearly against grass and stone.",
-        "risks": "contract: none, shader-only; dependency: none; concurrency: none; state: none; visual: sheen must stay off foliage and not make plaster look wet; performance: eight extra ALU ops per model fragment.",
-        "mitigation": "Gate the sheen with a smoothstep on vertex brightness, cap both terms, scale by sun/daylight, keep the wet specular separate, and verify a daylight capture against the previous frame."
-      }
-    },
-    {
-      "task_id": "aldervale-shading-pass-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 196 tests (129.0s), hygiene, guidelines/map and secrets pass 4/4. The model shader now adds a brightness-gated half-vector sheen and a view-facing rim light, capped and scaled by sun/daylight; steel, gold and roof edges read while foliage stays matte. README and ADR-040 updated; a daylight 1600x1000 capture was compared against the pre-shading frame. checklists: passed; commit follows, no push.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793435239.6247365,
-      "timestamp_str": "2026-10-31 11:27:19",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-shading-pass-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-shading-pass-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793435239.9779696,
-      "timestamp_str": "2026-10-31 11:27:19",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-well-pass-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Add a failing-first well test and detail the village well with an eight-block stone rim, moss patches, three thatch rows per slope, a ridge cap and finial, a longer windlass drum and an iron crank. [2/2] Update README/ADR-041, capture the village, run the 4/4 gate and commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793437532.087746,
-      "timestamp_str": "2026-10-31 12:05:32",
-      "agent": "opencode:web",
-      "impact_assessment": {
-        "why": "The well is the village centrepiece but was a plain stone drum with a smooth roof, the least detailed prop in the square.",
-        "benefits": "A masonry rim, moss and layered thatch that match the cottages, plus a readable windlass and crank at the player's eye level.",
-        "risks": "contract: none, visual-only; dependency: none; concurrency: none; state: none; growth: 102 to 244 faces, max height 2.323m under the 2.4m spec.",
-        "mitigation": "Keep the new rim inside the existing 2.4m bounds, pin face count and height in the test, and verify the village pixel capture before the gate."
-      }
-    },
-    {
-      "task_id": "aldervale-well-pass-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Phase 4 green: 197 tests (106.2s), hygiene, guidelines/map and secrets pass 4/4. The well now has an eight-block stone rim, three moss patches, three thatch rows per slope, a ridge cap and gold finial, a longer windlass drum with an iron crank and grip, and a bucket handle; 102 to 244 faces, max height 2.323m under the 2.4m spec. README and ADR-041 updated; village pixel capture verified the rim, thatch and crank. checklists: passed; commit follows, no push.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793437702.021212,
-      "timestamp_str": "2026-10-31 12:08:22",
-      "agent": "opencode:web"
-    },
-    {
-      "task_id": "aldervale-well-pass-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-well-pass-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793437702.3895462,
-      "timestamp_str": "2026-10-31 12:08:22",
-      "agent": "opencode:web"
-    },
     {
       "task_id": "aldervale-windmill-v1",
       "phase": "phase 2",
@@ -271,6 +40,227 @@
         "risks": "contract: one new world entity on the deterministic layout; dependency: none; concurrency: none; state: none; growth: eight poses of roughly 130 faces; placement must stay dry, walkable, off the path and outside the quest route.",
         "mitigation": "Place it via _walkable_near at village (-24,-18), keep the solid radius at 3m, assert both generated worlds contain it at the same coordinates, cap the pose set at eight, and verify the spawn and pixel-village captures."
       }
+    },
+    {
+      "task_id": "aldervale-windmill-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-windmill-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793458807.4437406,
+      "timestamp_str": "2026-10-31 18:00:07",
+      "agent": "copilot:aldervale",
+      "continued_from": "opencode:web"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 6",
+      "phase_num": 3,
+      "description": "Reforge stage 6: window 18, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 4 binary not analysed",
+      "files_affected": [
+        "assets/logo.jpg",
+        "assets/logo.png",
+        "assets/social-preview.jpg",
+        "assets/social-preview.png"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793458911.6848676,
+      "timestamp_str": "2026-10-31 18:01:51",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 6",
+      "phase_num": 3,
+      "description": "Reforge stage 6: stage 6 host review reviewed; run active; coverage 5/5",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458912.9781296,
+      "timestamp_str": "2026-10-31 18:01:52",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: window 21, 3 commit(s), 4 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 3 binary not analysed",
+      "files_affected": [
+        "assets/artwork.jpg",
+        "assets/logo.png",
+        "assets/social-preview.png"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793458926.1603434,
+      "timestamp_str": "2026-10-31 18:02:06",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: stage 7 host review reviewed; run active; coverage 6/6",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458927.6494234,
+      "timestamp_str": "2026-10-31 18:02:07",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 8",
+      "phase_num": 3,
+      "description": "Reforge stage 8: window 24, 3 commit(s), 7 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 2 binary not analysed",
+      "files_affected": [
+        "assets/screenshots/2026-10-28-index.png",
+        "assets/social-preview.png"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793458935.1249216,
+      "timestamp_str": "2026-10-31 18:02:15",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 8",
+      "phase_num": 3,
+      "description": "Reforge stage 8: stage 8 host review reviewed; run active; coverage 11/11",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458937.537867,
+      "timestamp_str": "2026-10-31 18:02:17",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 9",
+      "phase_num": 3,
+      "description": "Reforge stage 9: window 27, 3 commit(s), 31 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458950.597883,
+      "timestamp_str": "2026-10-31 18:02:30",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 9",
+      "phase_num": 3,
+      "description": "Reforge stage 9: stage 9 host review reviewed; run active; coverage 174/174",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458958.8184319,
+      "timestamp_str": "2026-10-31 18:02:38",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 10",
+      "phase_num": 3,
+      "description": "Reforge stage 10: window 30, 3 commit(s), 11 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458973.3691194,
+      "timestamp_str": "2026-10-31 18:02:53",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 10",
+      "phase_num": 3,
+      "description": "Reforge stage 10: stage 10 host review reviewed; run active; coverage 49/49",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458978.127094,
+      "timestamp_str": "2026-10-31 18:02:58",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 11",
+      "phase_num": 3,
+      "description": "Reforge stage 11: window 33, 3 commit(s), 14 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793458994.4966269,
+      "timestamp_str": "2026-10-31 18:03:14",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 11",
+      "phase_num": 3,
+      "description": "Reforge stage 11: stage 11 host review reviewed; run active; coverage 101/101",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793459000.1365998,
+      "timestamp_str": "2026-10-31 18:03:20",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 12",
+      "phase_num": 3,
+      "description": "Reforge stage 12: window 36, 3 commit(s), 11 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793459016.5391,
+      "timestamp_str": "2026-10-31 18:03:36",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 12",
+      "phase_num": 3,
+      "description": "Reforge stage 12: stage 12 host review reviewed; run active; coverage 38/38",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793459020.4371502,
+      "timestamp_str": "2026-10-31 18:03:40",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 13",
+      "phase_num": 3,
+      "description": "Reforge stage 13: window 39, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793459035.179157,
+      "timestamp_str": "2026-10-31 18:03:55",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 13",
+      "phase_num": 3,
+      "description": "Reforge stage 13: stage 13 host review reviewed; run active; coverage 23/23",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793459036.4879465,
+      "timestamp_str": "2026-10-31 18:03:56",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 14",
+      "phase_num": 3,
+      "description": "Reforge stage 14: window 40, 1 commit(s), 25 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793459053.1622121,
+      "timestamp_str": "2026-10-31 18:04:13",
+      "agent": "github"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 14",
+      "phase_num": 3,
+      "description": "Reforge stage 14: stage 14 host review reviewed; run completed; coverage 24/24",
+      "files_affected": [],
+      "status": "completed",
+      "timestamp": 1793459056.1293638,
+      "timestamp_str": "2026-10-31 18:04:16",
+      "agent": "github"
     }
   ]
 }
