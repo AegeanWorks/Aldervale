@@ -1,55 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "aldervale-smoke-pass-v1",
+    "task_id": "aldervale-shading-pass-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793433900.0106492,
+    "updated_at": 1793435239.6247365,
     "owner": "opencode:web",
     "started_by": "opencode:web",
     "continuations": [],
-    "completed_at": 1793433900.9765735
+    "completed_at": 1793435239.9779685
   },
   "checkpoints": [
-    {
-      "task_id": "aldervale-gpu-overcast-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Phase 4 green: 190 tests (81.9s), hygiene, guidelines/map and secrets pass 4/4. Atmosphere pass shipped: weatherEnv() grades zenith/horizon/fog, shortens fog, dims the sun, flattens direct light, hides stars/moon and raises cloud cover for rain/snow; terrain and models share a drifting cloud-shadow term; water mixes turquoise shallows by smooth bilinear height depth into deep blue, raises opacity and uses weather fog. Live Edge captures verified clear day, overcast snow day, overcast rain day, night rain without stars, and a lake with smooth turquoise shallows and a sun glint; the first lake capture exposed blocky seabed patches, fixed with bilinear depth and stronger water opacity. README and ADR-034 updated. checklists: passed; PRINCIPLE-018 commit/push skipped because the user did not authorize a commit.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793373857.2683535,
-      "timestamp_str": "2026-10-30 18:24:17",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-overcast-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'aldervale-gpu-overcast-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793373857.545217,
-      "timestamp_str": "2026-10-30 18:24:17",
-      "agent": "opencode:gfx"
-    },
-    {
-      "task_id": "aldervale-gpu-sky-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Layered sky clouds: two drifting fbm layers plus wisps, sun-lit cloud edges and wider sun/moon halos; clear weather gets more visible clouds. [2/2] Rain lightning flash overlay, tests, README/ADR-035 and full gates.",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793373974.3093932,
-      "timestamp_str": "2026-10-30 18:26:14",
-      "agent": "opencode:gfx",
-      "impact_assessment": {
-        "why": "The clear sky still reads as a mostly empty blue gradient, and rain has no lightning; clouds and storm flashes are the remaining atmosphere gaps.",
-        "benefits": "A richer sky in clear and overcast weather, better sun/moon presence, and occasional lightning that makes rain feel like a storm.",
-        "risks": "contract: none; dependency: none; concurrency: none; state: none; performance: two extra fbm evaluations in the sky shader; visual: denser clouds can gray out clear days or wash out the horizon, and flashes can overexpose a frame.",
-        "mitigation": "Keep cloud coverage and sun-lit tint bounded, preserve the existing gradient and weather palette, make lightning rare and short, and verify clear/rain/snow captures."
-      }
-    },
     {
       "task_id": "aldervale-gpu-sky-v1",
       "phase": "phase 4",
@@ -259,6 +221,44 @@
       "status": "completed",
       "timestamp": 1793433900.9765754,
       "timestamp_str": "2026-10-31 11:05:00",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-shading-pass-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Add a failing-first page test and a metal-aware sheen plus view-facing rim light to the WebGL model shader. [2/2] Update README/ADR-040, capture the daylight village, run the 4/4 gate and commit.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793435057.500359,
+      "timestamp_str": "2026-10-31 11:24:17",
+      "agent": "opencode:web",
+      "impact_assessment": {
+        "why": "GPU models were lit only by diffuse and point lights, so steel armour looked matte and silhouettes merged into the terrain at night.",
+        "benefits": "Steel and gold pick up a sun highlight, plaster and roof edges gain depth, and figures read more clearly against grass and stone.",
+        "risks": "contract: none, shader-only; dependency: none; concurrency: none; state: none; visual: sheen must stay off foliage and not make plaster look wet; performance: eight extra ALU ops per model fragment.",
+        "mitigation": "Gate the sheen with a smoothstep on vertex brightness, cap both terms, scale by sun/daylight, keep the wet specular separate, and verify a daylight capture against the previous frame."
+      }
+    },
+    {
+      "task_id": "aldervale-shading-pass-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 green: 196 tests (129.0s), hygiene, guidelines/map and secrets pass 4/4. The model shader now adds a brightness-gated half-vector sheen and a view-facing rim light, capped and scaled by sun/daylight; steel, gold and roof edges read while foliage stays matte. README and ADR-040 updated; a daylight 1600x1000 capture was compared against the pre-shading frame. checklists: passed; commit follows, no push.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793435239.6247365,
+      "timestamp_str": "2026-10-31 11:27:19",
+      "agent": "opencode:web"
+    },
+    {
+      "task_id": "aldervale-shading-pass-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'aldervale-shading-pass-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793435239.9779696,
+      "timestamp_str": "2026-10-31 11:27:19",
       "agent": "opencode:web"
     }
   ]

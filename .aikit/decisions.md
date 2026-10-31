@@ -315,3 +315,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Add a `smoke` list to the WebGL scene with the world position and phase of every cottage chimney, computed from the variant-specific chimney offset rotated by the house yaw. The browser projects each source through the shared camera matrix and draws four cached radial puffs that rise 3.6m, drift sideways and fade over a 20-second cycle; alpha is 0.28 by day and 0.34 at night, modal states skip the pass, and a 64px sprite is cached once instead of building gradients per frame.
 - **Consequences**: Five village chimneys now trail soft smoke that reads against both blue sky and stars, with one drawImage per puff and no new assets. The payload grows by five small objects per tick; simulation, saves and controls are untouched. Tests pin the payload fields and page hooks, and clear-day and night captures verify the plumes.
 - Cross-principle check: PRINCIPLE-010 (cached sprite, five sources), PRINCIPLE-012 (procedural puffs, no textures), PRINCIPLE-014 (payload and page tests), PRINCIPLE-015 (live day/night captures).
+
+### ADR-040: Metal sheen and rim light on GPU models
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: GPU models were shaded with diffuse, shadow and point lights only, so steel armour read as matte and figures lost their edges against grass and stone.
+- **Decision**: In the model fragment shader, add a half-vector sheen gated by a smoothstep on the vertex colour brightness (so steel and gold catch it while foliage and cloth do not) and a soft view-facing rim term. Both are capped, scale with sun and daylight, and stay separate from the existing wet specular.
+- **Consequences**: Armour, shields and roof edges catch a readable highlight, and silhouettes separate from the terrain without new geometry, textures or payload fields. The cost is about eight ALU operations per model fragment. Tests pin the shader hooks, and a daylight village capture verifies the highlight against the previous frame.
+- Cross-principle check: PRINCIPLE-010 (bounded ALU cost), PRINCIPLE-012 (no new assets), PRINCIPLE-014 (page test), PRINCIPLE-015 (live daylight capture).

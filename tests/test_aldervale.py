@@ -706,6 +706,11 @@ class TestWebGL(unittest.TestCase):
         self.assertIn("function projectPoint", PLAY3D_HTML)
         self.assertIn("drawChimneySmoke(cssW, cssH)", PLAY3D_HTML)
 
+    def test_webgl_page_shades_metal_with_rim_and_sheen(self):
+        self.assertIn("float metal", PLAY3D_HTML)
+        self.assertIn("float rimLight", PLAY3D_HTML)
+        self.assertIn("float sheen", PLAY3D_HTML)
+
 
 class TestRules(unittest.TestCase):
     def test_damage_roll_bounds(self):

@@ -551,6 +551,15 @@ void main(){
   c *= mix(0.55, 1.0, shadowAt(vWorld + n * 0.18));
   c *= cloudShade(vWorld.xz);
   c += pointLight(vWorld);
+  vec3 viewDir = normalize(uCam - vWorld);
+  vec3 halfDir = normalize(uLight + viewDir);
+  float sheen = pow(max(dot(n, halfDir), 0.0), 26.0);
+  float metal = smoothstep(0.52, 0.82,
+                           (vColor.r + vColor.g + vColor.b) / 3.0);
+  c += vec3(0.62, 0.68, 0.80) * sheen * (0.25 + 0.55 * metal) * uSunLight;
+  float rimLight = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);
+  c += vec3(0.42, 0.52, 0.68) * rimLight * 0.35 *
+       (0.35 + 0.65 * uDaylight);
   if (uWet > 0.01){
     vec3 v = normalize(uCam - vWorld);
     vec3 hv = normalize(uLight + v);

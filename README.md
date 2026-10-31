@@ -86,6 +86,9 @@ world, camera, meshes and clock.
 - One triangle-soup bundle carries all 41 models and 88 poses (~2.4 MB). The
   browser instantiates the real meshes for every visible actor, prop, tree and
   building, so there is no billboard LOD in this build.
+- Steel and gold use a brightness-gated half-vector sheen, and a soft
+  view-facing rim light keeps figures and roof edges readable against grass
+  and stone.
 - Each tick sends a compact scene description (camera, visible entities, tint,
   HUD text) rather than a pixel frame; the Python simulation remains
   authoritative.
