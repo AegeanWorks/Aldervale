@@ -431,7 +431,9 @@ Free for personal play under the Aegean Game License 1.1 (AGL-1.1); see [LICENSE
 <!-- aegean:screenshots:start -->
 ## Screenshots
 
-<a href="https://github.com/AegeanWorks/Aldervale/commit/6c90987"><img src="assets/screenshots/2026-10-28-index.png" alt="Aldervale interface at 2026-10-28"></a>
+<a href="https://github.com/AegeanWorks/Aldervale/commit/f1fd9ba"><img src="assets/screenshots/2026-10-31-index.png" alt="Aldervale interface at 2026-10-31"></a>
 
-*commit `6c90987` · 2026-10-28*
+<a href="https://github.com/AegeanWorks/Aldervale/commit/5624573"><img src="assets/screenshots/2026-11-03-studio.png" alt="Aldervale Studio at 2026-11-03"></a>
+
+*commit `5624573` · 2026-11-03 · viewport 1600x1000 · title scene via the built-in `--inspect` + `--web-shot` recipe; absolute-path captions removed, duplicate 10-31 entry merged*
 <!-- aegean:screenshots:end -->

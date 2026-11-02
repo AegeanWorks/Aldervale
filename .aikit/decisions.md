@@ -387,3 +387,10 @@ Context, Decision and Consequences lines.
 - **Decision**: Restore the tip write to `(px, py - 2)` (one-line fix) and pin it with `test_ground_details_paints_tall_tufts_two_pixels_high`, which draws a single stub-world grass cell and asserts a tip pixel sits directly above a mid-blade pixel.
 - **Consequences**: Repro passes post-fix (1 tip pixel, 1 stacked tuft); TestGfx green in 0.1 s; full-suite and gate re-runs pending before commit.
 - Cross-principle check: PRINCIPLE-010 (no perf change, same write count), PRINCIPLE-014 (failing-first repro + targeted test + full suite), PRINCIPLE-016 (code and ADR paired).
+
+### ADR-049: Re-shoot the Studio keeper with the built-in recipe; dedupe and de-leak captions
+- **Date**: 2026-11-03
+- **Status**: Accepted
+- **Context**: The README showed only the 2026-10-28 capture while the 2026-10-31 fit-window keeper sat unwired; `media.json` carried the 10-31 entry twice and all three captions leaked absolute paths (`.inspect/index.html`).
+- **Decision**: Merge the duplicate 10-31 entry, strip paths from all captions, and add `2026-11-03-studio.png` from the project's own recipe (`python -m aldervale --inspect .inspect`, then `--web-shot`, commit `5624573`, viewport 1600x1000) in `.aikit/media.json` and the README `aegean:screenshots` block. The capture ran while a sibling content commit landed; the rendered tree content equals the recorded commit.
+- **Consequences**: README proves the title scene survived the gfx rework. Reproduce with the two commands above.
