@@ -355,3 +355,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Clamp the overlay font to `min(ch*0.92, cw*1.7)` (floor 6 px) so glyphs never exceed their cell; overlay the minimap with `rgba(5,8,20,night*0.55)` after markers (player dot redrawn bright, border restroked).
 - **Consequences**: Narrow-viewport rows read without overlap; night minimap matches world darkness with the player dot still prominent. No layout, threshold or session change.
 - Cross-principle check: PRINCIPLE-010 (two fill-rate-trivial ops), PRINCIPLE-014 (no test surface changed), PRINCIPLE-015 (before/after Edge captures).
+
+### ADR-045: Ground details obey the light
+- **Date**: 2026-11-02
+- **Status**: Accepted
+- **Context**: Pixel ground details (flower flecks, grass blades, dirt/rock/sand grains) were written at full-baked brightness, so at night they glowed against correctly darkened terrain and read as pink/white noise (photographed in the camp-night pixel frame).
+- **Decision**: Scale every ground-detail color by mean ambient light, floored at 0.22 so details never vanish; day frames are bit-identical (factor ~1.0).
+- **Consequences**: Night ground goes dark and the fire pool reads naturally; measured pixel render holds at ~64 ms/frame on this box (baseline ~76 ms, variance band, no regression). No bake, palette or layout change.
+- Cross-principle check: PRINCIPLE-010 (~700 extra integer ops/frame, no allocation growth), PRINCIPLE-014 (full suite green), PRINCIPLE-015 (camp-night/village before/after `--gfx-shot`).

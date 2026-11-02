@@ -468,6 +468,17 @@ def _ground_details(fb, world, cam, env):
     cols = (pack_rgb(236, 206, 92), pack_rgb(224, 128, 150),
             pack_rgb(200, 160, 228), pack_rgb(238, 238, 244),
             pack_rgb(120, 178, 82))
+    ar_d, ag_d, ab_d = env.ambient
+    dk = (ar_d + ag_d + ab_d) / 3.0
+    if dk < 0.22:
+        dk = 0.22
+
+    def _dcol(c):
+        return pack_rgb(int(((c >> 16) & 255) * dk),
+                        int(((c >> 8) & 255) * dk),
+                        int((c & 255) * dk))
+
+    dcols = tuple(_dcol(c) for c in cols)
     sin_y = math.sin(cam.yaw)
     cos_y = math.cos(cam.yaw)
     for iz in range(cz0, cz0 + DETAIL_RADIUS * 2 + 1):
@@ -499,32 +510,37 @@ def _ground_details(fb, world, cam, env):
                 continue
             if mat in (M_GRASS, M_FOREST):
                 if r < 0.10:
-                    col = cols[int(rand01(ix, iz, seed + 611) * 4)]
+                    col = dcols[int(rand01(ix, iz, seed + 611) * 4)]
                     fb.set(px, py, col, depth - 0.1)
                     if r < 0.025 and px + 1 < fb.w:
                         fb.set(px + 1, py, col, depth - 0.1)
                 else:
-                    col = cols[4] if (ix + iz) & 1 else pack_rgb(88, 132, 58)
+                    col = dcols[4] if (ix + iz) & 1 else \
+                        _dcol(pack_rgb(88, 132, 58))
                     fb.set(px, py, col, depth - 0.1)
                     if depth < 13.0:
                         if py > 0:
-                            fb.set(px, py - 1, pack_rgb(104, 150, 66),
+                            fb.set(px, py - 1,
+                                   _dcol(pack_rgb(104, 150, 66)),
                                    depth - 0.1)
                         if py > 1 and (ix * 7 + iz * 3) & 1:
-                            fb.set(px, py - 2, pack_rgb(116, 164, 72),
+                            fb.set(px, py - 1,
+                                   _dcol(pack_rgb(116, 164, 72)),
                                    depth - 0.1)
             elif mat == M_DIRT:
-                col = pack_rgb(142, 122, 96) if (ix + iz) & 1 else \
-                    pack_rgb(120, 100, 78)
+                col = _dcol(pack_rgb(142, 122, 96)) if (ix + iz) & 1 else \
+                    _dcol(pack_rgb(120, 100, 78))
                 fb.set(px, py, col, depth - 0.1)
                 if px + 1 < fb.w and r < 0.16:
-                    fb.set(px + 1, py, pack_rgb(164, 144, 112), depth - 0.1)
+                    fb.set(px + 1, py, _dcol(pack_rgb(164, 144, 112)),
+                           depth - 0.1)
             elif mat == M_ROCK:
-                fb.set(px, py, pack_rgb(164, 164, 158), depth - 0.1)
+                fb.set(px, py, _dcol(pack_rgb(164, 164, 158)), depth - 0.1)
                 if py > 0 and r < 0.20:
-                    fb.set(px, py - 1, pack_rgb(186, 186, 178), depth - 0.1)
+                    fb.set(px, py - 1, _dcol(pack_rgb(186, 186, 178)),
+                           depth - 0.1)
             elif mat == M_SAND:
-                fb.set(px, py, pack_rgb(214, 198, 152), depth - 0.1)
+                fb.set(px, py, _dcol(pack_rgb(214, 198, 152)), depth - 0.1)
 
 
 def _cast_shadows(fb, world, cam, env):
