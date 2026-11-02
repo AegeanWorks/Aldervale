@@ -365,6 +365,21 @@ class TestWorldSim(unittest.TestCase):
         self.assertEqual(captain.attack_dmg, 22)
         self.assertTrue(any("enrages" in m[0] for m in w.messages))
 
+    def test_grave_warden_guards_the_camp(self):
+        from aldervale.world import HOSTILE_TEMPLATES
+        t = HOSTILE_TEMPLATES["warden"]
+        self.assertEqual((t["hp"], t["dmg"], t["model"]), (60, 12, "captain"))
+        a = self._world()
+        b = self._world()
+        for w in (a, b):
+            wardens = [e for e in w.entities
+                       if getattr(e, "kind", "") == "warden"]
+            self.assertEqual(len(wardens), 1)
+        wa = [e for e in a.entities if getattr(e, "kind", "") == "warden"][0]
+        wb = [e for e in b.entities if getattr(e, "kind", "") == "warden"][0]
+        self.assertEqual((wa.x, wa.z), (wb.x, wb.z))
+        self.assertEqual((wa.max_hp, wa.attack_dmg), (60, 12))
+
     def test_captain_skips_respawn_queue(self):
         w = self._world()
         captain = next(e for e in w.entities

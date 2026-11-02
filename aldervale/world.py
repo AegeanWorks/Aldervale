@@ -48,6 +48,13 @@ HOSTILE_TEMPLATES = {
                 "windup": 0.75, "cd": 1.6, "respawn": False,
                 "enrage": {"hp_frac": 0.35, "dmg_mult": 1.5,
                             "windup_mult": 0.7}},
+    "warden": {"model": "captain", "height": 2.2, "hp": 60, "atk": 10,
+               "dfn": 3, "speed": 2.7, "xp": 70, "aggro": 11.0,
+               "reach": 2.0, "dmg": 12, "home_r": 10.0,
+               "drops": {"bone": 0.9, "gold": 0.6}, "name": "Grave Warden",
+               "windup": 0.65, "cd": 1.4, "respawn": True,
+               "enrage": {"hp_frac": 0.3, "dmg_mult": 1.4,
+                           "windup_mult": 0.8}},
 }
 
 
@@ -334,6 +341,8 @@ class World:
                                 cz + math.sin(ang) * 7.5, yaw=ang + math.pi)
         captain = self._spawn_hostile("captain", cx, cz - 3.5,
                                           yaw=math.pi)
+        self._spawn_hostile("warden", cx - 4.5, cz + 3.0,
+                            yaw=math.pi * 0.5)
         chest = ent.Chest(self._next_eid(), cx + 4.5, cz + 3.0,
                           {"gold": 140, "potion": 2})
         self._add(chest)

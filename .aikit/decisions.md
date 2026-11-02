@@ -371,3 +371,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Move the captain into `HOSTILE_TEMPLATES` with byte-identical stats and spawn him through `_spawn_hostile`; add an optional `enrage` table (`hp_frac` 0.35, `dmg_mult` 1.5, `windup_mult` 0.7) latched one-way in `resolve_player_swing` with a "X enrages!" telegraph; gate `respawn` per template (captain `False`, others `True`) so the boss still stays dead and the amulet/quest chain is untouched.
 - **Consequences**: Scripted bout (seed 3): enrage at tick 466 (10 landed swings, dmg 15->22, windup 0.75->0.52), kill at tick 648, amulet drops, no captain in the respawn queue. Failing-first tests pin the template numbers, the latch, the telegraph and the no-respawn rule.
 - Cross-principle check: PRINCIPLE-012 (no new deps), PRINCIPLE-014 (4 targeted + full suite green), PRINCIPLE-015 (seeded bout log).
+
+### ADR-047: A Grave Warden guards the bone camp
+- **Date**: 2026-11-02
+- **Status**: Accepted
+- **Context**: The old camp fields seven skeletons plus one boss, so the approach has no mid-tier threat and the new enrage system has only one consumer.
+- **Decision**: Add a `warden` row to `HOSTILE_TEMPLATES` (captain mesh at 2.2 m, "Grave Warden", hp 60/dmg 12, milder enrage 0.3/1.4x/0.8x, respawning) spawned once per camp at a fixed offset through `_spawn_hostile`. No new quest state, model, or gate: it is reachable on the existing active-quest road.
+- **Consequences**: Scripted bout (seed 3): enrage at tick 186 (15 hp, dmg 12->16), down at tick 928, camp drops intact. Determinism test pins one warden at identical coordinates across worlds.
+- Cross-principle check: PRINCIPLE-012 (data only), PRINCIPLE-014 (new test + full suite green), PRINCIPLE-015 (seeded bout + camp-night capture).
