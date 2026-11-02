@@ -339,3 +339,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Add a procedural stone windmill with four sails, eight baked blade poses, a lit window and a solid walkable-world entity. The deterministic world cycles its pose and the GPU scene projects the warm window light.
 - **Consequences**: The windmill is visible from the village approach in both render paths and adds no assets or simulation state. Atlas baking grows by eight poses; mesh, atlas and world tests pin the geometry, animation and placement.
 - Cross-principle check: PRINCIPLE-010 (bounded eight-pose atlas), PRINCIPLE-012 (procedural geometry, no new assets), PRINCIPLE-014 (mesh/world tests), PRINCIPLE-015 (regenerated village inspection capture).
+
+### ADR-043: Showcase staging that frames instead of clipping
+- **Date**: 2026-11-02
+- **Status**: Accepted
+- **Context**: The pixel castle showcase staged the player 30 m from a 14 m wall (radius 13 m), so the billboard top clipped out of frame and read as a grey slab; the combat showcase teleported a wolf 2 m dead-ahead onto the player and ambient bandits stood inside the frame, reading as mesh intersection. Debugging proved the renderer correct in every case (near_clip 2.3 m uninvolved; depth order, occlusion and LOD all behave; pink patches are terrain flower flecks by design).
+- **Decision**: Stage `_scene_castle[_night]` at +72 m so the full wall, towers and door fit the 288x162 frame; stage the combat foe at 4.5 m with 1.4 m lateral offset and park non-foe hostiles within 25 m at 3 m behind the camera (depth-clipped, out of frame). No renderer, clip, bias or model change.
+- **Consequences**: Both showcase frames read cleanly with no code-path change; the same staging applies to ASCII, pixel and GPU captures. Future showcase scenes must keep subjects inside the frame and keep ambient crowds out of it; renderer changes require a bisection proof (hide-half) before touching clip/bias math.
+- Cross-principle check: PRINCIPLE-010 (no frame-cost change), PRINCIPLE-014 (existing scene/probe tests unaffected), PRINCIPLE-015 (before/after `--gfx-shot` pairs).

@@ -149,12 +149,12 @@ def _scene_road(game):
 
 def _scene_castle(game):
     kx, kz = game.world.terrain.castle
-    return _place(game, kx, kz + 30, math.pi, DAY)
+    return _place(game, kx, kz + 72, math.pi, DAY)
 
 
 def _scene_castle_night(game):
     kx, kz = game.world.terrain.castle
-    return _place(game, kx, kz + 30, math.pi, NIGHT)
+    return _place(game, kx, kz + 72, math.pi, NIGHT)
 
 
 def _scene_camp_night(game):
@@ -172,7 +172,7 @@ def _scene_combat(game):
     p = game.world.player
     foe = next(e for e in game.world.entities
                if getattr(e, "kind", "") == "wolf")
-    foe.x, foe.z = p.x, p.z - 2.0
+    foe.x, foe.z = p.x + 1.4, p.z - 4.5
     foe.ground_y = game.world.terrain.height(foe.x, foe.z)
     foe.yaw = 0.0
     foe.state = "windup"
@@ -185,6 +185,17 @@ def _scene_combat(game):
     game.cam_yaw = math.pi
     game.cam = None
     game._ensure_camera()
+    fx = math.sin(game.cam_yaw)
+    fz = math.cos(game.cam_yaw)
+    for e in game.world.entities:
+        if e is not foe and getattr(e, "kind", "") in (
+                "wolf", "bandit", "skeleton", "captain"):
+            dx, dz = e.x - p.x, e.z - p.z
+            d = math.hypot(dx, dz)
+            if d < 25.0:
+                e.x = game.cam.x - fx * 3.0
+                e.z = game.cam.z - fz * 3.0
+                e.ground_y = game.world.terrain.height(e.x, e.z)
     return DAY
 
 
