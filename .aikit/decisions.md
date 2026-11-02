@@ -363,3 +363,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Scale every ground-detail color by mean ambient light, floored at 0.22 so details never vanish; day frames are bit-identical (factor ~1.0).
 - **Consequences**: Night ground goes dark and the fire pool reads naturally; measured pixel render holds at ~64 ms/frame on this box (baseline ~76 ms, variance band, no regression). No bake, palette or layout change.
 - Cross-principle check: PRINCIPLE-010 (~700 extra integer ops/frame, no allocation growth), PRINCIPLE-014 (full suite green), PRINCIPLE-015 (camp-night/village before/after `--gfx-shot`).
+
+### ADR-046: The Bone Captain as data with an enrage phase
+- **Date**: 2026-11-02
+- **Status**: Accepted
+- **Context**: The boss was the only hostile built from inline constructor args while wolves/bandits/skeletons spawn from `HOSTILE_TEMPLATES`; he also lacked a phase shift, so the climactic fight was a flat damage race.
+- **Decision**: Move the captain into `HOSTILE_TEMPLATES` with byte-identical stats and spawn him through `_spawn_hostile`; add an optional `enrage` table (`hp_frac` 0.35, `dmg_mult` 1.5, `windup_mult` 0.7) latched one-way in `resolve_player_swing` with a "X enrages!" telegraph; gate `respawn` per template (captain `False`, others `True`) so the boss still stays dead and the amulet/quest chain is untouched.
+- **Consequences**: Scripted bout (seed 3): enrage at tick 466 (10 landed swings, dmg 15->22, windup 0.75->0.52), kill at tick 648, amulet drops, no captain in the respawn queue. Failing-first tests pin the template numbers, the latch, the telegraph and the no-respawn rule.
+- Cross-principle check: PRINCIPLE-012 (no new deps), PRINCIPLE-014 (4 targeted + full suite green), PRINCIPLE-015 (seeded bout log).

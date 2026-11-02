@@ -83,7 +83,7 @@ class Actor(Entity):
                  "home_r", "aggro_r", "attack_range", "attack_dmg",
                  "cooldown", "windup_t", "anim_t", "moving", "drops",
                  "dead_t", "ai_kind", "flight_angle", "windup_s", "cd_base",
-                 "regen_acc")
+                 "regen_acc", "enrage", "enraged")
 
     def __init__(self, eid, model, x, z, height, *, kind, hp, atk, dfn,
                  speed, xp_reward, aggro_r, attack_range, attack_dmg,
@@ -120,6 +120,8 @@ class Actor(Entity):
         self.windup_s = windup_s
         self.cd_base = cd_base
         self.regen_acc = 0.0
+        self.enrage = None
+        self.enraged = False
 
     @property
     def dead(self):

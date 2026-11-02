@@ -28,17 +28,26 @@ HOSTILE_TEMPLATES = {
     "wolf": {"model": "wolf", "height": 1.0, "hp": 22, "atk": 6, "dfn": 1,
              "speed": 3.6, "xp": 14, "aggro": 9.0, "reach": 1.3, "dmg": 7,
              "home_r": 16.0, "drops": {"pelt": 0.8, "gold": 0.5},
-             "name": "Grey Wolf", "windup": 0.4, "cd": 1.1},
+             "name": "Grey Wolf", "windup": 0.4, "cd": 1.1,
+             "respawn": True},
     "bandit": {"model": "bandit", "height": 1.85, "hp": 30, "atk": 8,
                "dfn": 2, "speed": 3.2, "xp": 22, "aggro": 11.0, "reach": 1.5,
                "dmg": 9, "home_r": 14.0,
                "drops": {"gold": 0.9, "potion": 0.25}, "name": "Road Bandit",
-               "windup": 0.5, "cd": 1.25},
+               "windup": 0.5, "cd": 1.25, "respawn": True},
     "skeleton": {"model": "skeleton", "height": 1.9, "hp": 26, "atk": 7,
                  "dfn": 1, "speed": 2.9, "xp": 18, "aggro": 10.0,
                  "reach": 1.5, "dmg": 8, "home_r": 12.0,
                  "drops": {"bone": 0.9, "gold": 0.6},
-                 "name": "Restless Bones", "windup": 0.55, "cd": 1.15},
+                 "name": "Restless Bones", "windup": 0.55, "cd": 1.15,
+                 "respawn": True},
+    "captain": {"model": "captain", "height": 2.6, "hp": 110, "atk": 13,
+                "dfn": 4, "speed": 2.6, "xp": 160, "aggro": 13.0,
+                "reach": 2.2, "dmg": 15, "home_r": 10.0,
+                "drops": {"gold": 1.0}, "name": "The Bone Captain",
+                "windup": 0.75, "cd": 1.6, "respawn": False,
+                "enrage": {"hp_frac": 0.35, "dmg_mult": 1.5,
+                            "windup_mult": 0.7}},
 }
 
 
@@ -123,6 +132,8 @@ class World:
                           attack_dmg=t["dmg"], home_r=t["home_r"],
                           drops=dict(t["drops"]), name=t["name"],
                           windup_s=t["windup"], cd_base=t["cd"])
+        if t.get("enrage") is not None:
+            actor.enrage = dict(t["enrage"])
         if yaw is not None:
             actor.yaw = yaw
         self._add(actor)
@@ -321,14 +332,8 @@ class World:
             ang = i * 0.897 + 0.4
             self._spawn_hostile("skeleton", cx + math.cos(ang) * 7.5,
                                 cz + math.sin(ang) * 7.5, yaw=ang + math.pi)
-        captain = ent.Actor(self._next_eid(), "captain", cx, cz - 3.5, 2.6,
-                            kind="captain", hp=110, atk=13, dfn=4, speed=2.6,
-                            xp_reward=160, aggro_r=13.0, attack_range=2.2,
-                            attack_dmg=15, home_r=10.0, scale=1.0,
-                            drops={"gold": 1.0}, name="The Bone Captain",
-                            windup_s=0.75, cd_base=1.6)
-        captain.yaw = math.pi
-        self._add(captain)
+        captain = self._spawn_hostile("captain", cx, cz - 3.5,
+                                          yaw=math.pi)
         chest = ent.Chest(self._next_eid(), cx + 4.5, cz + 3.0,
                           {"gold": 140, "potion": 2})
         self._add(chest)
@@ -498,6 +503,14 @@ class World:
             if behind:
                 dmg = int(dmg * 1.5)
             e.hp -= dmg
+            if (e.hp > 0 and e.enrage is not None and not e.enraged
+                    and e.hp <= e.max_hp * e.enrage["hp_frac"]):
+                e.enraged = True
+                e.attack_dmg = int(e.attack_dmg
+                                   * e.enrage["dmg_mult"])
+                e.windup_s = e.windup_s * e.enrage["windup_mult"]
+                self.add_message("%s enrages!" % (e.name or "The foe"),
+                                 FOE_COLOR)
             e.flash = 1.0
             e.flash_color = (0.7, pack_rgb(255, 230, 230))
             hit_any = True
@@ -540,7 +553,7 @@ class World:
                     self._add_drop(ent.Pickup(self._next_eid(), item_id, 1,
                                               actor.x + 0.4, actor.z + 0.3,
                                               0.35))
-        if actor.kind in HOSTILE_TEMPLATES:
+        if HOSTILE_TEMPLATES.get(actor.kind, {}).get("respawn", False):
             self.respawn.append({"kind": actor.kind, "x": actor.home_x,
                                  "z": actor.home_z, "t": 180.0})
         if actor.kind == "captain":

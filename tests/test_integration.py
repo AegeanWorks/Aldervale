@@ -341,6 +341,37 @@ class TestWorldSim(unittest.TestCase):
         self.assertGreaterEqual(w.player.inventory.count("gold"), 280)
         self.assertGreaterEqual(w.player.level, 2)
 
+    def test_captain_enrages_from_template(self):
+        from aldervale.world import HOSTILE_TEMPLATES
+        t = HOSTILE_TEMPLATES["captain"]
+        self.assertEqual((t["hp"], t["dmg"], t["windup"]), (110, 15, 0.75))
+        w = self._world()
+        captain = next(e for e in w.entities
+                       if getattr(e, "kind", "") == "captain")
+        self.assertEqual((captain.max_hp, captain.attack_dmg), (110, 15))
+        self.assertFalse(captain.enraged)
+        p = w.player
+        p.x, p.z = captain.x, captain.z - 1.2
+        p.yaw = 0.0
+        captain.hp = 38
+        captain.aggro_r = 0.0
+        captain.state = "idle"
+        p.attack_t = 0.0
+        p.attack_done = False
+        env = Env(0.25, 0.0)
+        for _ in range(24):
+            w.update(1.0 / 30.0, env)
+        self.assertTrue(captain.enraged)
+        self.assertEqual(captain.attack_dmg, 22)
+        self.assertTrue(any("enrages" in m[0] for m in w.messages))
+
+    def test_captain_skips_respawn_queue(self):
+        w = self._world()
+        captain = next(e for e in w.entities
+                       if getattr(e, "kind", "") == "captain")
+        w.kill_actor(captain)
+        self.assertFalse(any(r["kind"] == "captain" for r in w.respawn))
+
     def test_save_load_roundtrip(self):
         w = self._world()
         w.player.inventory.add("gold", 123)
