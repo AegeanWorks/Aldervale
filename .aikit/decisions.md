@@ -347,3 +347,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Stage `_scene_castle[_night]` at +72 m so the full wall, towers and door fit the 288x162 frame; stage the combat foe at 4.5 m with 1.4 m lateral offset and park non-foe hostiles within 25 m at 3 m behind the camera (depth-clipped, out of frame). No renderer, clip, bias or model change.
 - **Consequences**: Both showcase frames read cleanly with no code-path change; the same staging applies to ASCII, pixel and GPU captures. Future showcase scenes must keep subjects inside the frame and keep ambient crowds out of it; renderer changes require a bisection proof (hide-half) before touching clip/bias math.
 - Cross-principle check: PRINCIPLE-010 (no frame-cost change), PRINCIPLE-014 (existing scene/probe tests unaffected), PRINCIPLE-015 (before/after `--gfx-shot` pairs).
+
+### ADR-044: GPU HUD legibility at the edges (narrow ASCII, night minimap)
+- **Date**: 2026-11-02
+- **Status**: Accepted
+- **Context**: Full-width GPU status panel and minimap verified clean by screenshot day and night, so no change there. Two edge defects photographed: (1) at narrow canvas heights the HUD falls back to ASCII rows whose 8 px floor font overflows ~5 px cells and overlaps; (2) the minimap stays full-day bright at night while the world goes dark.
+- **Decision**: Clamp the overlay font to `min(ch*0.92, cw*1.7)` (floor 6 px) so glyphs never exceed their cell; overlay the minimap with `rgba(5,8,20,night*0.55)` after markers (player dot redrawn bright, border restroked).
+- **Consequences**: Narrow-viewport rows read without overlap; night minimap matches world darkness with the player dot still prominent. No layout, threshold or session change.
+- Cross-principle check: PRINCIPLE-010 (two fill-rate-trivial ops), PRINCIPLE-014 (no test surface changed), PRINCIPLE-015 (before/after Edge captures).

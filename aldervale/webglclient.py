@@ -1381,6 +1381,14 @@ function drawHud(){
     }
     const px = mx + (p.x - sx) / span * ms;
     const py = my + (p.z - sz) / span * ms;
+    const mapNight = scene.env ? (1.0 - scene.env.daylight) : 0;
+    if (mapNight > 0.04){
+      hctx.fillStyle = "rgba(5,8,20," + (mapNight * 0.55).toFixed(3) + ")";
+      hctx.fillRect(mx, my, ms, ms);
+      hctx.strokeStyle = "rgba(232,196,90,.55)";
+      hctx.lineWidth = 1;
+      hctx.strokeRect(mx + 0.5, my + 0.5, ms - 1, ms - 1);
+    }
     hctx.fillStyle = "#ffe08a";
     hctx.beginPath();
     hctx.arc(px, py, 3.2, 0, Math.PI * 2);
@@ -1391,7 +1399,7 @@ function drawHud(){
     hctx.fillText("N", mx + ms * 0.5, my + 12);
     hctx.textAlign = "center";
   }
-  hctx.font = Math.max(8, Math.floor(ch * 0.92)) +
+  hctx.font = Math.max(6, Math.floor(Math.min(ch * 0.92, cw * 1.7))) +
     'px "Cascadia Mono",Consolas,monospace';
   hctx.textAlign = "center";
   hctx.textBaseline = "middle";
