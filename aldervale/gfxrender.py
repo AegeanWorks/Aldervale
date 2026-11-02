@@ -524,7 +524,7 @@ def _ground_details(fb, world, cam, env):
                                    _dcol(pack_rgb(104, 150, 66)),
                                    depth - 0.1)
                         if py > 1 and (ix * 7 + iz * 3) & 1:
-                            fb.set(px, py - 1,
+                            fb.set(px, py - 2,
                                    _dcol(pack_rgb(116, 164, 72)),
                                    depth - 0.1)
             elif mat == M_DIRT:

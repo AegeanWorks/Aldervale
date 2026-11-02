@@ -16,3 +16,5 @@ __pycache__/
 inspect-out/
 
 node_modules/
+# AIKit transient state
+.aikit/*.log

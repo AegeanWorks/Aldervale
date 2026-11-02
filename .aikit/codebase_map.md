@@ -9,8 +9,8 @@
 - **Total Python Modules**: `31`
 - **Total Classes**: `70`
 - **Total Top-Level Functions**: `227`
-- **Total Class Methods**: `448`
-- **Total Source Lines**: `15858`
+- **Total Class Methods**: `452`
+- **Total Source Lines**: `15994`
 
 ---
 
@@ -107,7 +107,7 @@
 ### [`aldervale/entities.py`](aldervale/entities.py)
 > *World entities: props, pickups, ambient life and AI-driven actors.*
 
-**Size**: `335` lines (`11910` bytes)
+**Size**: `337` lines (`11987` bytes)
 
 **Classes:**
 - `class Entity` - *Anything the renderer draws as a billboard.*
@@ -253,7 +253,7 @@
 ### [`aldervale/gfxrender.py`](aldervale/gfxrender.py)
 > *Truecolor scene renderer: sky, raster terrain, 3D models, billboards, weather.*
 
-**Size**: `910` lines (`34251` bytes)
+**Size**: `926` lines (`34785` bytes)
 
 **Classes:**
 - `class GfxCamera` - *Pixel projection derived from the cell camera, same view and alignment.*
@@ -324,7 +324,7 @@
 ### [`aldervale/inspect.py`](aldervale/inspect.py)
 > *Headless inspection harness: visible frames plus a scripted control probe.*
 
-**Size**: `840` lines (`27843` bytes)
+**Size**: `851` lines (`28316` bytes)
 
 **Classes:**
 - `class ScriptedTerm` - *A terminal double that replays queued presses, holds and mouse events.*
@@ -687,7 +687,7 @@
 ### [`aldervale/webglclient.py`](aldervale/webglclient.py)
 > *WebGL browser client for the Aldervale GPU path.*
 
-**Size**: `1626` lines (`61169` bytes)
+**Size**: `1634` lines (`61533` bytes)
 
 ---
 
@@ -717,7 +717,7 @@
 ### [`aldervale/world.py`](aldervale/world.py)
 > *The world of Aldervale: generation, simulation, quests and persistence.*
 
-**Size**: `825` lines (`34934` bytes)
+**Size**: `847` lines (`36193` bytes)
 
 **Classes:**
 - `class World` - *Owns terrain, entities, the player, quests and the world clock.*
@@ -766,7 +766,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `982` lines (`40044` bytes)
+**Size**: `1013` lines (`41433` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -831,6 +831,7 @@
 - `class TestGfx`
   - Method `.test_framebuffer_column_fill_and_depth()`
   - Method `.test_framebuffer_blend_and_row_major_scale()`
+  - Method `.test_ground_details_paints_tall_tufts_two_pixels_high()`
   - Method `.test_bake_pixel_sprite_crops_and_sets_alpha()`
   - Method `.test_bake_pixel_sprite_keeps_emissive_glow()`
   - Method `.test_pixel_atlas_builds_a_model_and_reports_steps()`
@@ -888,7 +889,7 @@
 ### [`tests/test_integration.py`](tests/test_integration.py)
 > *Integration tier: world generation, quest chain, rendering and the CLI.*
 
-**Size**: `1755` lines (`67057` bytes)
+**Size**: `1801` lines (`69020` bytes)
 
 **Classes:**
 - `class TestTerrain`
@@ -921,6 +922,9 @@
   - Method `.test_spawns_present()`
   - Method `.test_village_has_a_windmill()`
   - Method `.test_full_quest_chain()`
+  - Method `.test_captain_enrages_from_template()`
+  - Method `.test_grave_warden_guards_the_camp()`
+  - Method `.test_captain_skips_respawn_queue()`
   - Method `.test_save_load_roundtrip()`
   - Method `.test_weather_cycles_without_consuming_game_rng()`
   - Method `.test_location_plate_shows_weather()`

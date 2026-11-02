@@ -491,6 +491,37 @@ class TestGfx(unittest.TestCase):
         self.assertEqual(rgb[:3], bytes((127, 127, 127)))
         self.assertEqual(rgb[3:6], bytes((127, 127, 127)))
 
+    def test_ground_details_paints_tall_tufts_two_pixels_high(self):
+        from aldervale.gfxrender import _ground_details
+        from aldervale.noise import rand01
+        from aldervale.terrain import M_GRASS, M_SNOW
+        w = 64
+        tx, tz = 40, 41
+        seed = next(s for s in range(500)
+                    if 0.10 <= rand01(tx, tz, s + 313) <= 0.46)
+        materials = [[M_SNOW] * w for _ in range(w)]
+        materials[tz][tx] = M_GRASS
+        world = SimpleNamespace(
+            terrain=SimpleNamespace(W=w, materials=materials,
+                                    height=lambda x, z: 0.0),
+            seed=seed)
+        cam = SimpleNamespace(x=tx + 0.5, z=tz + 0.5 - 8.0, y=3.0, yaw=0.0,
+                              w=80, f=40.0, fy=40.0, horizon=22)
+        env = SimpleNamespace(ambient=(1.0, 1.0, 1.0))
+        fb = FrameBuffer(80, 45)
+        fb.depth = [8.0] * (80 * 45)
+        _ground_details(fb, world, cam, env)
+        top, mid = pack_rgb(116, 164, 72), pack_rgb(104, 150, 66)
+
+        def pixel(x, y):
+            o = fb._col_stride * x + y * 3
+            return ((fb.data[o] << 16) | (fb.data[o + 1] << 8)
+                    | fb.data[o + 2])
+
+        tops = [(x, y) for x in range(80) for y in range(44)
+                if pixel(x, y) == top and pixel(x, y + 1) == mid]
+        self.assertTrue(tops, "tall grass tip must sit above its mid blade")
+
     def test_bake_pixel_sprite_crops_and_sets_alpha(self):
         mesh = MeshBuilder()
         mesh.box(0, 0.5, 0, 1, 1, 1, 0x808080)

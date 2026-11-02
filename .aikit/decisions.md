@@ -379,3 +379,11 @@ Context, Decision and Consequences lines.
 - **Decision**: Add a `warden` row to `HOSTILE_TEMPLATES` (captain mesh at 2.2 m, "Grave Warden", hp 60/dmg 12, milder enrage 0.3/1.4x/0.8x, respawning) spawned once per camp at a fixed offset through `_spawn_hostile`. No new quest state, model, or gate: it is reachable on the existing active-quest road.
 - **Consequences**: Scripted bout (seed 3): enrage at tick 186 (15 hp, dmg 12->16), down at tick 928, camp drops intact. Determinism test pins one warden at identical coordinates across worlds.
 - Cross-principle check: PRINCIPLE-012 (data only), PRINCIPLE-014 (new test + full suite green), PRINCIPLE-015 (seeded bout + camp-night capture).
+
+### ADR-048: Restore the two-pixel tall grass blade lost in the dimming refactor
+- **Date**: 2026-11-02
+- **Status**: Accepted
+- **Context**: ADR-045's ambient-dimming refactor of `_ground_details` rewrote the tall-blade tip write from `(px, py - 2)` to `(px, py - 1)`, so the light tip overwrote the mid blade on the same pixel; day frames were not bit-identical as claimed and tall tufts rendered one pixel high. Found in the wave-10 audit via source diff against 94af329's parent, confirmed with a failing-first stub-world repro (1 tip pixel, 0 stacked tufts pre-fix).
+- **Decision**: Restore the tip write to `(px, py - 2)` (one-line fix) and pin it with `test_ground_details_paints_tall_tufts_two_pixels_high`, which draws a single stub-world grass cell and asserts a tip pixel sits directly above a mid-blade pixel.
+- **Consequences**: Repro passes post-fix (1 tip pixel, 1 stacked tuft); TestGfx green in 0.1 s; full-suite and gate re-runs pending before commit.
+- Cross-principle check: PRINCIPLE-010 (no perf change, same write count), PRINCIPLE-014 (failing-first repro + targeted test + full suite), PRINCIPLE-016 (code and ADR paired).
