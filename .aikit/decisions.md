@@ -394,3 +394,11 @@ Context, Decision and Consequences lines.
 - **Context**: The README showed only the 2026-10-28 capture while the 2026-10-31 fit-window keeper sat unwired; `media.json` carried the 10-31 entry twice and all three captions leaked absolute paths (`.inspect/index.html`).
 - **Decision**: Merge the duplicate 10-31 entry, strip paths from all captions, and add `2026-11-03-studio.png` from the project's own recipe (`python -m aldervale --inspect .inspect`, then `--web-shot`, commit `5624573`, viewport 1600x1000) in `.aikit/media.json` and the README `aegean:screenshots` block. The capture ran while a sibling content commit landed; the rendered tree content equals the recorded commit.
 - **Consequences**: README proves the title scene survived the gfx rework. Reproduce with the two commands above.
+
+### ADR-050: List shipped brand assets in the asset manifest
+- **Date**: 2026-11-03
+- **Status**: Accepted
+- **Context**: Wave 2 commit 9039f58 created ASSETS.md claiming the game ships no art files; wave 2 commit e8fed84 and wave 3 brand commits then shipped logo, social-preview and screenshot binaries under assets/ without updating the manifest. Per LICENSE Sec 1.2 unlisted Game Assets stay proprietary, which contradicts the public README preview and the COMMERCIAL.md grant pointer. Found in the 1-30 audit via a failing-first repro (5 shipped files, 0 listed).
+- **Decision**: List aldervale/ code plus assets/logo.jpg, assets/social-preview.png and assets/screenshots/* as AGL-1.1 Game Assets with AegeanWorks as rights holder, and pin the mapping with tests/test_integration.py::TestLaunchers::test_assets_manifest_lists_shipped_brand_files. REUSE.toml already aggregates LicenseRef-AGL-1.1 over all paths, so no change there.
+- **Consequences**: The manifest is the authoritative Sec 1.2 list again; future brand churn fails the gate instead of silently re-proprietarising assets. No simulation, control, save or runtime change.
+- Cross-principle check: PRINCIPLE-014 (failing-first repro plus permanent gate), PRINCIPLE-016 (code and doc paired).

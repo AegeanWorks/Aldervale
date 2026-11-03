@@ -1215,6 +1215,24 @@ class TestLaunchers(unittest.TestCase):
         self.assertNotIn("Aegean-E/AIKit", readme,
                          "the badge must point at the current AIKit repository")
 
+    def test_assets_manifest_lists_shipped_brand_files(self):
+        with open(os.path.join(PROJECT, "ASSETS.md"), encoding="utf-8") as f:
+            manifest = f.read()
+        shipped = []
+        assets = os.path.join(PROJECT, "assets")
+        for root, _dirs, files in os.walk(assets):
+            for name in files:
+                shipped.append(os.path.join(root, name))
+        self.assertTrue(shipped, "assets/ should ship brand files")
+        self.assertNotIn("ships no art", manifest.lower(),
+                         "ASSETS.md must not claim no art files while assets/ ships files")
+        for path in shipped:
+            rel = os.path.relpath(path, PROJECT).replace(os.sep, "/")
+            parent_wildcard = os.path.dirname(rel).replace(os.sep, "/") + "/*"
+            self.assertTrue(rel in manifest or parent_wildcard in manifest,
+                          "%s ships under assets/ but is unlisted in ASSETS.md "
+                          "(LICENSE Sec 1.2 leaves unlisted Game Assets proprietary)" % rel)
+
     def test_run_sh_targets_module(self):
         with open(os.path.join(PROJECT, "run.sh"), encoding="utf-8") as f:
             content = f.read()

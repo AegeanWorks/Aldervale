@@ -9,8 +9,8 @@
 - **Total Python Modules**: `31`
 - **Total Classes**: `70`
 - **Total Top-Level Functions**: `227`
-- **Total Class Methods**: `452`
-- **Total Source Lines**: `15994`
+- **Total Class Methods**: `453`
+- **Total Source Lines**: `16012`
 
 ---
 
@@ -889,7 +889,7 @@
 ### [`tests/test_integration.py`](tests/test_integration.py)
 > *Integration tier: world generation, quest chain, rendering and the CLI.*
 
-**Size**: `1801` lines (`69020` bytes)
+**Size**: `1819` lines (`70049` bytes)
 
 **Classes:**
 - `class TestTerrain`
@@ -1009,6 +1009,7 @@
   - Method `.test_web_launchers_detect_python_like_play_bat()`
   - Method `.test_play_web_version_fastpath()`
   - Method `.test_readme_lists_every_module_and_license_files()`
+  - Method `.test_assets_manifest_lists_shipped_brand_files()`
   - Method `.test_run_sh_targets_module()`
   - Method `.test_play_bat_wt_directory_has_no_trailing_backslash()`
   - Method `.test_vscode_launch_configs()`
