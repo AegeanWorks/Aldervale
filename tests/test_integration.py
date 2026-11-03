@@ -83,6 +83,24 @@ class TestTerrain(unittest.TestCase):
                 count += 2
         self.assertLess(total / count, 34.0)
 
+    def test_walkable_border_returns_false_without_crash(self):
+        t = Terrain(1, size=32, octaves=3)
+        for x in range(32):
+            t.heights[15][x] = 5.0
+        self.assertFalse(t.walkable(31, 15))
+        self.assertFalse(t.walkable(0, 15))
+
+    def test_stamp_path_covers_true_midpoint(self):
+        t = Terrain(1, size=32, octaves=3)
+        t.path_mask = bytearray(32 * 32)
+        t._stamp_path((10, 10), (20, 10))
+        # analytic quadratic midpoint: 0.25*a + 0.5*m + 0.25*b
+        mx = (10 + 20) * 0.5 + (10 - 10) * 0.18
+        mz = (10 + 10) * 0.5 - (20 - 10) * 0.18
+        midx = 0.25 * 10 + 0.5 * mx + 0.25 * 20
+        midz = 0.25 * 10 + 0.5 * mz + 0.25 * 10
+        self.assertTrue(t.is_path(midx, midz))
+
 
 class _FakeWorld:
     pass
@@ -340,6 +358,12 @@ class TestWorldSim(unittest.TestCase):
         self.assertEqual(w.quest, "done")
         self.assertGreaterEqual(w.player.inventory.count("gold"), 280)
         self.assertGreaterEqual(w.player.level, 2)
+
+    def test_unknown_quest_state_falls_back(self):
+        from aldervale.story import QUEST_OBJECTIVES
+        w = self._world()
+        w.quest = "act2_circlet"
+        self.assertEqual(w.quest_objective(), QUEST_OBJECTIVES["done"])
 
     def test_captain_enrages_from_template(self):
         from aldervale.world import HOSTILE_TEMPLATES
@@ -1173,7 +1197,7 @@ class TestLaunchers(unittest.TestCase):
     def test_web_launchers_are_one_click(self):
         for name, needles in (
                 ("PLAY_WEB.bat", ("--serve", "--open-play")),
-                ("play_web.sh", ("--serve", "--open-play"))):
+                ("play_web.sh", ("--serve", "--open-play", '"$@"'))):
             path = os.path.join(PROJECT, name)
             self.assertTrue(os.path.isfile(path), name)
             with open(path, encoding="utf-8", errors="replace") as f:
@@ -1249,6 +1273,8 @@ class TestLaunchers(unittest.TestCase):
         self.assertIn('-d "%CD%"', content)
         self.assertIn("-w -1 --maximized", content,
                       "the game should open a dedicated maximized window")
+        self.assertIn("%*", content,
+                      "the wt.exe branch must forward args like :plain does")
 
     def test_vscode_launch_configs(self):
         with open(os.path.join(PROJECT, ".vscode", "launch.json"),

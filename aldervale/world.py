@@ -521,7 +521,7 @@ class World:
                 self.add_message("%s enrages!" % (e.name or "The foe"),
                                  FOE_COLOR)
             e.flash = 1.0
-            e.flash_color = (0.7, pack_rgb(255, 230, 230))
+            e.flash_color = pack_rgb(255, 230, 230)
             hit_any = True
             self.add_damage_number(e.x, e.z, e.ground_y + e.height * 0.8,
                                    str(dmg),
@@ -614,7 +614,7 @@ class World:
         player.hp -= total
         player.hurt_t = 0.4
         player.flash = 1.0
-        player.flash_color = (0.8, pack_rgb(255, 90, 80))
+        player.flash_color = pack_rgb(255, 90, 80)
         self.add_damage_number(player.x, player.z,
                                player.ground_y + 2.0, "-%d" % total,
                                HURT_COLOR)
@@ -774,7 +774,8 @@ class World:
         return True
 
     def quest_objective(self):
-        return story.QUEST_OBJECTIVES[self.quest]
+        return story.QUEST_OBJECTIVES.get(self.quest,
+                                          story.QUEST_OBJECTIVES["done"])
 
     def save(self, path):
         """Persist world state atomically (temp file, fsync, replace)."""

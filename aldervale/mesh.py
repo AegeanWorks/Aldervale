@@ -157,8 +157,8 @@ class MeshBuilder:
                 lo.append((cx, y0 + ca, cz + sa))
                 hi.append((cx + h, y0 + ca, cz + sa))
             else:
-                lo.append((cx + ca, y0 + ca, cz))
-                hi.append((cx + ca, y0 + ca, cz + h))
+                lo.append((cx + ca, y0 + sa, cz))
+                hi.append((cx + ca, y0 + sa, cz + h))
         if rp is not None:
             lo = [self._tp(p, rp) for p in lo]
             hi = [self._tp(p, rp) for p in hi]

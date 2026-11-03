@@ -1,5 +1,7 @@
 """Deterministic integer-hash value noise and fractal sums (no random module)."""
 
+import math
+
 _MASK = 0xFFFFFFFF
 _INV32 = 1.0 / 4294967296.0
 
@@ -21,7 +23,7 @@ def _smooth(t):
 
 
 def value_noise(x, y, seed):
-    ix, iy = int(x), int(y)
+    ix, iy = math.floor(x), math.floor(y)
     fx, fy = _smooth(x - ix), _smooth(y - iy)
     a = rand01(ix, iy, seed)
     b = rand01(ix + 1, iy, seed)
@@ -33,6 +35,8 @@ def value_noise(x, y, seed):
 
 
 def fbm(x, y, seed, octaves=4, lacunarity=2.0, gain=0.5):
+    if octaves < 1:
+        raise ValueError(f"octaves must be >= 1, got {octaves}")
     total = 0.0
     amp = 1.0
     freq = 1.0

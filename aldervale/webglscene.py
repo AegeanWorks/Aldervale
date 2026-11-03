@@ -156,6 +156,9 @@ def scene(game, world, seq=0):
     cos_y = math.cos(cam.yaw)
     half_tan = math.tan(1.22 * 0.5)
     env = game._last_env
+    if env is None:
+        from .render import Env
+        env = Env(world.day_t, world.time)
     ar, ag, ab = env.ambient
     fogc = env.fog
     fgr = ((fogc >> 16) & 255) / 255.0

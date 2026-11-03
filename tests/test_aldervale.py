@@ -75,6 +75,20 @@ class TestNoise(unittest.TestCase):
         self.assertGreaterEqual(v1, 0.0)
         self.assertLessEqual(v1, 1.0)
 
+    def test_fbm_zero_octaves_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            fbm(1.0, 1.0, 9, octaves=0)
+
+    def test_value_noise_negative_uses_floor(self):
+        for seed in (1, 7):
+            v = value_noise(-0.2, 0.5, seed)
+            self.assertGreaterEqual(v, 0.0)
+            self.assertLessEqual(v, 1.0)
+        # continuity across the integer boundary (int() truncation broke this)
+        a = value_noise(-0.001, 3.25, 4)
+        b = value_noise(0.001, 3.25, 4)
+        self.assertLess(abs(a - b), 0.05)
+
 
 class TestMath3d(unittest.TestCase):
     def test_rot_y_maps_front(self):
@@ -278,6 +292,15 @@ class TestMesh(unittest.TestCase):
         smooth = sum(1 for f in rock.faces if len(f) > 6 and f[6])
         self.assertGreaterEqual(smooth, 40)
 
+    def test_cylinder_z_axis_is_round(self):
+        b = MeshBuilder()
+        b.cylinder(0, 0, 0, 1.0, 2.0, seg=8, axis="z")
+        mesh = b.build()
+        self.assertTrue(len(mesh.verts) > 0)
+        for x, y, z in mesh.verts:
+            self.assertAlmostEqual(x * x + y * y, 1.0, places=9)
+            self.assertIn(z, (0, 2.0))
+
     def test_campfire_has_a_stone_ring_logs_and_layered_flames(self):
         fire = models.campfire(frame=1)
         emissive = sum(1 for f in fire.faces if f[5])
@@ -470,6 +493,17 @@ class TestAtlas(unittest.TestCase):
         self.assertGreater(atlas.heights["castle"], 10)
         self.assertLess(atlas.heights["chicken"], 1)
 
+    def test_pixel_atlas_ctor_yaw_steps_honored(self):
+        atlas = PixelAtlas(yaw_steps=20)
+        atlas.build(keys=["bush"])
+        self.assertEqual(len(atlas.frames[("bush", "idle")]), 20)
+
+    def test_guard_pose_drives_limbs(self):
+        still = models.guard().verts
+        striding = models.guard(
+            pose={"leg_l": 0.3, "leg_r": -0.3}).verts
+        self.assertNotEqual(still, striding)
+
 
 class TestGfx(unittest.TestCase):
     def test_framebuffer_column_fill_and_depth(self):
@@ -490,6 +524,22 @@ class TestGfx(unittest.TestCase):
         self.assertEqual((w, h), (4, 4))
         self.assertEqual(rgb[:3], bytes((127, 127, 127)))
         self.assertEqual(rgb[3:6], bytes((127, 127, 127)))
+
+    def test_hit_flash_contract_roundtrip(self):
+        # world.py stores flash_color as a packed int; both renderers
+        # must accept it without raising (regression: tuple crashed both).
+        from aldervale.buffer import unpack_rgb
+        from aldervale.gfxrender import _blit_sprite
+        from aldervale.gfx import PixelSprite
+        from aldervale.mesh import Sprite
+        color = pack_rgb(255, 230, 230)
+        cell = Sprite(["##"], [[color] * 2], [[5] * 2])
+        sc = Screen(20, 10)
+        sc.blit(cell, 10, 9, 4, flash=(1.0, unpack_rgb(color)))
+        px = PixelSprite(2, 2, bytes([10, 20, 30, 255]) * 4)
+        fb = FrameBuffer(20, 10)
+        _blit_sprite(fb, px, 10, 9, 4, 1.0, 1.0, 1.0, 5.0,
+                     flash=1.0, flash_color=color)
 
     def test_ground_details_paints_tall_tufts_two_pixels_high(self):
         from aldervale.gfxrender import _ground_details
@@ -703,6 +753,15 @@ class TestWebGL(unittest.TestCase):
         self.assertFalse(gl_scene(game, game.world, 2)["show_map"])
         point = game.pick_world(66, 50)
         self.assertIsNotNone(point, "the WebGL click ray should hit terrain")
+
+    def test_scene_without_prior_render_env(self):
+        game = build_game(seed=3, width=132, height=60, terrain_size=48,
+                          atlas_keys=["knight"], render_mode="webgl")
+        game._update_camera(force=True)
+        self.assertIsNone(game._last_env)
+        payload = gl_scene(game, game.world, 1)
+        self.assertEqual(payload["status"], "ready")
+        self.assertIn("camera", payload)
 
     def test_webgl_page_has_a_token_slot(self):
         self.assertIn("__TOKEN__", PLAY3D_HTML)
@@ -1007,6 +1066,21 @@ class TestMouseAndOutline(unittest.TestCase):
         mid = sp.chars[sp.h // 2]
         interior = mid.strip(" ")[1:-1]
         self.assertEqual(len(set(interior)), 1, interior)
+
+
+class TestTerminalTitle(unittest.TestCase):
+    def test_set_title_respects_no_color(self):
+        from aldervale.term import Terminal
+        buf = io.StringIO()
+        term = Terminal(color=False)
+        term.write = buf.write
+        term.set_title("ALDERVALE")
+        self.assertEqual(buf.getvalue(), "")
+        buf2 = io.StringIO()
+        term2 = Terminal(color=True)
+        term2.write = buf2.write
+        term2.set_title("ALDERVALE")
+        self.assertIn("ALDERVALE", buf2.getvalue())
 
 
 if __name__ == "__main__":

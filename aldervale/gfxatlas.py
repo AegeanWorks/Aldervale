@@ -79,6 +79,8 @@ class PixelAtlas:
             cw = int(spec["size"][0] * ppm * 1.9) + 18
             chh = int(spec["size"][1] * ppm * ASPECT * 1.9) + 18
             steps = _yaw_steps(key)
+            if self.yaw_steps != YAW_STEPS:
+                steps = self.yaw_steps
             for pose_name, pose_kwargs in spec["poses"].items():
                 kw = dict(spec["kwargs"])
                 params = inspect.signature(spec["builder"]).parameters

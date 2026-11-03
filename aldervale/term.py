@@ -368,7 +368,7 @@ class Terminal:
         sys.stdout.flush()
 
     def set_title(self, title):
-        if self.color or True:
+        if self.color:
             self.write("\x1b]0;%s\x07" % title)
 
     def read_key(self):

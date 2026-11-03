@@ -152,8 +152,8 @@ class Terrain:
             t = i / steps
             t2 = t * t
             t1 = 1.0 - t
-            px = t1 * t1 * ax + 2 * t1 * t * mx + t2 * t2 * bx
-            pz = t1 * t1 * az + 2 * t1 * t * mz + t2 * t2 * bz
+            px = t1 * t1 * ax + 2 * t1 * t * mx + t2 * bx
+            pz = t1 * t1 * az + 2 * t1 * t * mz + t2 * bz
             self._stamp_disk(px, pz, 2.2)
 
     def _stamp_ring(self, cx, cz, r):
@@ -299,7 +299,10 @@ class Terrain:
         if h <= self.water + 0.12:
             return False
         for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if abs(self.heights[iz + dz][ix + dx] - h) > 1.5:
+            nx, nz = ix + dx, iz + dz
+            if not (0 <= nx < self.W and 0 <= nz < self.W):
+                return False
+            if abs(self.heights[nz][nx] - h) > 1.5:
                 return False
         return True
 

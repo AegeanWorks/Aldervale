@@ -7,7 +7,7 @@ far-to-near as depth-tested billboards with fog and day/night tinting.
 
 import math
 
-from .buffer import pack_rgb, FAR
+from .buffer import pack_rgb, unpack_rgb, FAR
 from .noise import fbm, rand01
 from .terrain import M_DIRT, M_FOREST, M_GRASS, M_ROCK, M_SNOW
 
@@ -695,7 +695,9 @@ def _entities(screen, world, cam, env):
                 screen.set(int(col), py, "." if rows < 0.7 else ":", sprite.colors[0][0],
                            depth_z)
             continue
-        flash = ent.flash_color if ent.flash > 0.0 else None
+        flash = None
+        if ent.flash > 0.0 and ent.flash_color is not None:
+            flash = (ent.flash, unpack_rgb(ent.flash_color))
         ent_depth = depth_z - 0.02
         if rows > 2.5:
             foot = int(bottom)

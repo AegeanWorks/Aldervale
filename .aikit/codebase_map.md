@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `31`
-- **Total Classes**: `70`
+- **Total Classes**: `71`
 - **Total Top-Level Functions**: `227`
-- **Total Class Methods**: `453`
-- **Total Source Lines**: `16012`
+- **Total Class Methods**: `464`
+- **Total Source Lines**: `16128`
 
 ---
 
@@ -208,7 +208,7 @@
 ### [`aldervale/gfxatlas.py`](aldervale/gfxatlas.py)
 > *Pixel sprite atlas and source-mesh cache.*
 
-**Size**: `359` lines (`13000` bytes)
+**Size**: `361` lines (`13083` bytes)
 
 **Classes:**
 - `class PixelAtlas` - *Baked pixel frames: (model_key, pose_name) -> [PixelSprite].*
@@ -461,7 +461,7 @@
 ### [`aldervale/models.py`](aldervale/models.py)
 > *Every 3D model in the realm: actors, creatures, flora and architecture.*
 
-**Size**: `969` lines (`42944` bytes)
+**Size**: `970` lines (`42976` bytes)
 
 **Functions:**
 - `def C(r, g, b)`
@@ -501,7 +501,7 @@
 ### [`aldervale/noise.py`](aldervale/noise.py)
 > *Deterministic integer-hash value noise and fractal sums (no random module).*
 
-**Size**: `45` lines (`1081` bytes)
+**Size**: `49` lines (`1193` bytes)
 
 **Functions:**
 - `def hash2i(ix, iy, seed)`
@@ -515,7 +515,7 @@
 ### [`aldervale/render.py`](aldervale/render.py)
 > *Scene renderer: animated sky, voxel-marched terrain and billboard sprites.*
 
-**Size**: `817` lines (`31852` bytes)
+**Size**: `819` lines (`31945` bytes)
 
 **Classes:**
 - `class Camera` - *View parameters plus precomputed per-column ray angles.*
@@ -596,7 +596,7 @@
 ### [`aldervale/term.py`](aldervale/term.py)
 > *Terminal control: VT100 setup, polled key input and frame output.*
 
-**Size**: `419` lines (`14941` bytes)
+**Size**: `419` lines (`14933` bytes)
 
 **Classes:**
 - `class TerminalError` - *Raised when the terminal cannot render the game at all.*
@@ -625,7 +625,7 @@
 ### [`aldervale/terrain.py`](aldervale/terrain.py)
 > *Procedural island heightfield with biome colours, baked light and water.*
 
-**Size**: `321` lines (`11369` bytes)
+**Size**: `324` lines (`11476` bytes)
 
 **Classes:**
 - `class Terrain` - *A square island world grid sampled at one unit per cell.*
@@ -694,7 +694,7 @@
 ### [`aldervale/webglscene.py`](aldervale/webglscene.py)
 > *World and model payloads for the WebGL client.*
 
-**Size**: `315` lines (`11137` bytes)
+**Size**: `318` lines (`11232` bytes)
 
 **Classes:**
 - `class MeshAtlas` - *Minimal atlas for the GPU path: source meshes, no baked sprites.*
@@ -717,7 +717,7 @@
 ### [`aldervale/world.py`](aldervale/world.py)
 > *The world of Aldervale: generation, simulation, quests and persistence.*
 
-**Size**: `847` lines (`36193` bytes)
+**Size**: `848` lines (`36257` bytes)
 
 **Classes:**
 - `class World` - *Owns terrain, entities, the player, quests and the world clock.*
@@ -766,7 +766,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `1013` lines (`41433` bytes)
+**Size**: `1087` lines (`44433` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -776,6 +776,8 @@
 - `class TestNoise`
   - Method `.test_deterministic_and_bounded()`
   - Method `.test_fbm_smooth()`
+  - Method `.test_fbm_zero_octaves_raises_value_error()`
+  - Method `.test_value_noise_negative_uses_floor()`
 - `class TestMath3d`
   - Method `.test_rot_y_maps_front()`
   - Method `.test_identity()`
@@ -804,6 +806,7 @@
   - Method `.test_house_carries_layered_architecture_detail()`
   - Method `.test_knight_cape_and_shield_reach_behind_and_outboard()`
   - Method `.test_boulders_are_rounded()`
+  - Method `.test_cylinder_z_axis_is_round()`
   - Method `.test_campfire_has_a_stone_ring_logs_and_layered_flames()`
   - Method `.test_torch_flame_is_compact_and_basketed()`
   - Method `.test_well_has_a_stone_rim_thatch_and_crank()`
@@ -828,9 +831,12 @@
 - `class TestAtlas`
   - Method `.test_yaw_frame_wraparound()`
   - Method `.test_heights_registered()`
+  - Method `.test_pixel_atlas_ctor_yaw_steps_honored()`
+  - Method `.test_guard_pose_drives_limbs()`
 - `class TestGfx`
   - Method `.test_framebuffer_column_fill_and_depth()`
   - Method `.test_framebuffer_blend_and_row_major_scale()`
+  - Method `.test_hit_flash_contract_roundtrip()`
   - Method `.test_ground_details_paints_tall_tufts_two_pixels_high()`
   - Method `.test_bake_pixel_sprite_crops_and_sets_alpha()`
   - Method `.test_bake_pixel_sprite_keeps_emissive_glow()`
@@ -844,6 +850,7 @@
 - `class TestWebGL`
   - Method `.test_model_bundle_covers_every_pose()`
   - Method `.test_world_scene_and_raycast()`
+  - Method `.test_scene_without_prior_render_env()`
   - Method `.test_webgl_page_has_a_token_slot()`
   - Method `.test_webgl_compact_hud_keeps_rows_apart()`
   - Method `.test_webgl_page_draws_additive_light_glow()`
@@ -883,13 +890,15 @@
   - Method `.test_mouse_event_normalization()`
   - Method `.test_bake_sprite_has_silhouette_outline()`
   - Method `.test_bake_flat_face_is_one_glyph()`
+- `class TestTerminalTitle`
+  - Method `.test_set_title_respects_no_color()`
 
 ---
 
 ### [`tests/test_integration.py`](tests/test_integration.py)
 > *Integration tier: world generation, quest chain, rendering and the CLI.*
 
-**Size**: `1819` lines (`70049` bytes)
+**Size**: `1845` lines (`71149` bytes)
 
 **Classes:**
 - `class TestTerrain`
@@ -899,6 +908,8 @@
   - Method `.test_path_exists_between_village_and_castle()`
   - Method `.test_materials_match_their_terrain()`
   - Method `.test_texture_grid_is_coherent()`
+  - Method `.test_walkable_border_returns_false_without_crash()`
+  - Method `.test_stamp_path_covers_true_midpoint()`
 - `class _FakeWorld`
 - `class TestRenderScene`
   - Method `.setUpClass()`
@@ -922,6 +933,7 @@
   - Method `.test_spawns_present()`
   - Method `.test_village_has_a_windmill()`
   - Method `.test_full_quest_chain()`
+  - Method `.test_unknown_quest_state_falls_back()`
   - Method `.test_captain_enrages_from_template()`
   - Method `.test_grave_warden_guards_the_camp()`
   - Method `.test_captain_skips_respawn_queue()`

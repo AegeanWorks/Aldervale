@@ -212,7 +212,8 @@ def guard(pose=None):
         p.update(pose)
     pal = dict(trim=C(120, 34, 36), trim_d=C(88, 24, 28), plume=C(220, 200, 120))
     b = MeshBuilder()
-    inner = knight({"leg_l": 0.0, "leg_r": 0.0, "arm_l": -0.25, "arm_r": 0.25},
+    inner = knight({**{"leg_l": 0.0, "leg_r": 0.0, "arm_l": -0.25,
+                       "arm_r": 0.25}, **p},
                    palette=pal)
     b.merge(inner)
     spear = MeshBuilder()
