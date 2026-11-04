@@ -9,7 +9,8 @@ from pathlib import Path
 from . import entities as ent
 from . import story
 from .buffer import pack_rgb
-from .rules import (ITEMS, Inventory, damage_roll, xp_for_level)
+from .rules import (ARMOR_ORDER, ITEMS, SHOP_STOCK, WEAPON_ORDER, Inventory,
+                    damage_roll, xp_for_level)
 from .terrain import Terrain
 
 DAY_LENGTH = 300.0
@@ -93,6 +94,15 @@ class World:
         self._eid += 1
         return "e%d" % self._eid
 
+    def _reserve_eid(self, eid):
+        """Advance the eid counter past a restored id (save/load)."""
+        try:
+            num = int(str(eid)[1:])
+        except (TypeError, ValueError):
+            return
+        if num > self._eid:
+            self._eid = num
+
     def _generate(self):
         ter = self.terrain
         rng = self.rng
@@ -126,12 +136,15 @@ class World:
                 nz = z + math.sin(ang) * r
                 if ter.walkable(nx, nz):
                     return nx, nz
-        return x, z
+        return None
 
     def _spawn_hostile(self, kind, x, z, yaw=None):
         """Spawn a hostile from its canon template at a walkable spot."""
         t = HOSTILE_TEMPLATES[kind]
-        sx, sz = self._walkable_near(x, z, 8.0)
+        spot = self._walkable_near(x, z, 8.0)
+        if spot is None:
+            return None
+        sx, sz = spot
         actor = ent.Actor(self._next_eid(), t["model"], sx, sz, t["height"],
                           kind=kind, hp=t["hp"], atk=t["atk"], dfn=t["dfn"],
                           speed=t["speed"], xp_reward=t["xp"],
@@ -163,14 +176,19 @@ class World:
             ("house1", 9, 17, 0.05),
         )
         for model, dx, dz, yaw in houses:
-            hx, hz = self._walkable_near(vx + dx, vz + dz, 10.0)
+            spot = self._walkable_near(vx + dx, vz + dz, 10.0)
+            if spot is None:
+                continue
+            hx, hz = spot
             self._add(ent.Prop(self._next_eid(), model, hx, hz, 4.3, yaw=yaw,
                                solid=True, radius=2.6))
-        wmx, wmz = self._walkable_near(vx - 6, vz - 18, 8.0)
-        mill = ent.Prop(self._next_eid(), "windmill", wmx, wmz, 10.5,
-                        yaw=0.0, solid=True, radius=3.0, name="Windmill")
-        mill.pose = "blades0"
-        self._add(mill)
+        mill_spot = self._walkable_near(vx - 6, vz - 18, 8.0)
+        if mill_spot is not None:
+            wmx, wmz = mill_spot
+            mill = ent.Prop(self._next_eid(), "windmill", wmx, wmz, 10.5,
+                            yaw=0.0, solid=True, radius=3.0, name="Windmill")
+            mill.pose = "blades0"
+            self._add(mill)
         self._add(ent.Prop(self._next_eid(), "anvil", vx + 13, vz + 3, 0.8,
                            solid=True, radius=0.6, name="Anvil"))
         self._add(ent.Prop(self._next_eid(), "cart", vx - 14, vz + 2, 1.35,
@@ -201,8 +219,11 @@ class World:
         smith.yaw = 2.6
         self._add(smith)
         for i in range(3):
-            px, pz = self._walkable_near(vx + rng.uniform(-12, 12),
-                                         vz + rng.uniform(-10, 10))
+            spot = self._walkable_near(vx + rng.uniform(-12, 12),
+                                       vz + rng.uniform(-10, 10))
+            if spot is None:
+                continue
+            px, pz = spot
             self._add(ent.Actor(self._next_eid(), story.CAST["villagers"][i]["model"],
                                 px, pz, 1.8, kind="villager", hp=25, atk=2,
                                 dfn=0, speed=1.4, xp_reward=0, aggro_r=0,
@@ -210,8 +231,11 @@ class World:
                                 ai_kind="villager",
                                 name=story.VILLAGER_NAMES[i]))
         for i in range(4):
-            px, pz = self._walkable_near(vx + rng.uniform(-8, 8),
-                                         vz + rng.uniform(-6, 8))
+            spot = self._walkable_near(vx + rng.uniform(-8, 8),
+                                       vz + rng.uniform(-6, 8))
+            if spot is None:
+                continue
+            px, pz = spot
             self._add(ent.Actor(self._next_eid(), "chicken", px, pz, 0.42,
                                 kind="chicken", hp=4, atk=0, dfn=0,
                                 speed=1.8, xp_reward=0, aggro_r=0,
@@ -321,15 +345,19 @@ class World:
         for i in range(4):
             best = None
             for _ in range(10):
-                bx, bz = self._walkable_near(
+                spot = self._walkable_near(
                     midx + (rng.random() - 0.5) * 26,
                     midz + (rng.random() - 0.5) * 26)
+                if spot is None:
+                    continue
+                bx, bz = spot
                 d = math.hypot(bx - px, bz - pz)
                 if best is None or d > best[0]:
                     best = (d, bx, bz)
                 if d >= SANCTUARY_R:
                     break
-            self._spawn_hostile("bandit", best[1], best[2])
+            if best is not None:
+                self._spawn_hostile("bandit", best[1], best[2])
 
     def _spawn_camp(self, cx, cz):
         rng = self.rng
@@ -735,7 +763,9 @@ class World:
 
     def buy(self, item_id):
         player = self.player
-        item = ITEMS[item_id]
+        item = ITEMS.get(item_id)
+        if item is None or item_id not in SHOP_STOCK:
+            return False
         if player.inventory.count("gold") < item.price:
             self.add_message("Not enough gold for %s." % item.name,
                              HURT_COLOR)
@@ -767,6 +797,13 @@ class World:
         if player.inventory.count(item_id) <= 0:
             return False
         player.inventory.remove(item_id, 1)
+        for order, slot, default in ((WEAPON_ORDER, "weapon", "rusty_sword"),
+                                     (ARMOR_ORDER, "armor", "tunic")):
+            if getattr(player.inventory, slot) == item_id \
+                    and player.inventory.count(item_id) <= 0:
+                setattr(player.inventory, slot,
+                        next((w for w in reversed(order)
+                              if player.inventory.count(w)), default))
         price = max(1, item.price // 2)
         player.inventory.add("gold", price)
         self.add_message("Sold %s for %d gold." % (item.name, price),
@@ -792,6 +829,11 @@ class World:
             "deaths": self.deaths,
             "weather": self.weather,
             "weather_left": self.weather_left,
+            "ground": [{"eid": e.eid, "item": e.item_id, "n": e.amount,
+                        "x": e.x, "z": e.z, "h": e.height,
+                        "quest": e.quest}
+                       for e in self.entities
+                       if isinstance(e, ent.Pickup)],
             "player": {
                 "x": p.x, "z": p.z, "yaw": p.yaw, "hp": p.hp,
                 "max_hp": p.max_hp, "atk": p.atk, "dfn": p.dfn,
@@ -815,6 +857,12 @@ class World:
     def load(cls, path, atlas, terrain_size=None):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
+        if data.get("schema") != 1:
+            raise ValueError(
+                "What: save file %s has schema %r, want 1. "
+                "Why: wrong game or a hand edit. "
+                "Fix: start a new game or restore a matching save."
+                % (path, data.get("schema")))
         world = cls(data["seed"], atlas, terrain_size=terrain_size)
         world.time = data["time"]
         world.day_t = data["day_t"]
@@ -834,8 +882,11 @@ class World:
         p.atk, p.dfn = pd["atk"], pd["dfn"]
         p.level, p.xp = pd["level"], pd["xp"]
         p.stamina = pd["stamina"]
-        p.inventory = Inventory(pd.get("weapon", "rusty_sword"),
-                                pd.get("armor", "tunic"))
+        weapon = pd.get("weapon", "rusty_sword")
+        armor = pd.get("armor", "tunic")
+        p.inventory = Inventory(
+            weapon=weapon if weapon in ITEMS else "rusty_sword",
+            armor=armor if armor in ITEMS else "tunic")
         p.inventory.counts = dict(pd.get("counts", {}))
         p.ground_y = world.terrain.height(p.x, p.z)
         world.entities = [e for e in world.entities
@@ -845,4 +896,13 @@ class World:
             if isinstance(e, ent.Chest) and e.eid in world.opened_chests:
                 e.opened = True
                 e.model = "chest_o"
+        have = {e.eid for e in world.entities}
+        for g in data.get("ground", []):
+            if g["eid"] in have:
+                continue
+            world._add(ent.Pickup(g["eid"], g["item"], g.get("n", 1),
+                                  g["x"], g["z"], g.get("h", 0.3),
+                                  quest=g.get("quest", False)))
+            have.add(g["eid"])
+            world._reserve_eid(g["eid"])
         return world

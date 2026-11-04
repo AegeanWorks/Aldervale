@@ -5,6 +5,8 @@ terrain, baked 3D sprites, sky and HUD all write here, then flush() emits only
 the cells that changed since the previous frame.
 """
 
+import math
+
 FAR = 1.0e9
 NEAREST = -1.0
 RAMP = " .,'`:;~-=+x*#%&8@$"
@@ -120,6 +122,8 @@ class Screen:
              flash=None, alpha=1.0):
         """Draw a baked sprite anchored at (cx, bottom_row) scaled to target_rows."""
         if target_rows < 1 or alpha <= 0.01:
+            return
+        if not math.isfinite(target_rows) or not math.isfinite(alpha):
             return
         sh, sw = sprite.h, sprite.w
         if sh < 1 or sw < 1:

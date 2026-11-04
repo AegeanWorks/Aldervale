@@ -301,6 +301,31 @@ class TestMesh(unittest.TestCase):
             self.assertAlmostEqual(x * x + y * y, 1.0, places=9)
             self.assertIn(z, (0, 2.0))
 
+    def test_elder_staff_clears_the_ground(self):
+        mesh = models.villager(role="elder")
+        self.assertGreaterEqual(min(v[1] for v in mesh.verts), -0.01)
+
+    def test_house_plinth_tones_match_front_and_back(self):
+        # _quad jitters baked colors per face-counter, so pin the input
+        # predicate: for each plinth x the south and north boxes match.
+        from aldervale.mesh import MeshBuilder
+        calls = []
+        orig = MeshBuilder.box
+
+        def spy(self, cx, cy, cz, sx, sy, sz, color, *a, **k):
+            calls.append((cx, cy, cz, color))
+            return orig(self, cx, cy, cz, sx, sy, sz, color, *a, **k)
+
+        MeshBuilder.box = spy
+        try:
+            models.house()
+        finally:
+            MeshBuilder.box = orig
+        front = {x: c for x, y, z, c in calls if y == 0.45 and z == 2.12}
+        back = {x: c for x, y, z, c in calls if y == 0.45 and z == -2.12}
+        self.assertEqual(len(front), 5)
+        self.assertEqual(front, back)
+
     def test_campfire_has_a_stone_ring_logs_and_layered_flames(self):
         fire = models.campfire(frame=1)
         emissive = sum(1 for f in fire.faces if f[5])
@@ -504,6 +529,23 @@ class TestAtlas(unittest.TestCase):
             pose={"leg_l": 0.3, "leg_r": -0.3}).verts
         self.assertNotEqual(still, striding)
 
+    def test_elder_smith_walk_swings_arms(self):
+        from aldervale.atlas import MODEL_SPECS
+        for key in ("elder", "smith"):
+            poses = MODEL_SPECS[key]["poses"]
+            self.assertIn("leg_r", poses["walk0"], key)
+            self.assertIn("leg_r", poses["walk1"], key)
+            self.assertNotEqual(poses["walk0"]["leg_r"], 0.0, key)
+            self.assertEqual(poses["walk0"]["leg_r"],
+                             -poses["walk1"]["leg_r"], key)
+
+    def test_pixel_glow_is_emissive_only(self):
+        sp = bake_pixel_sprite(models.house(), yaw=0, pitch=0.10,
+                               dist=9.0, f=80, aspect=1.0, canvas=(200, 200))
+        self.assertIsNotNone(sp.glow)
+        self.assertGreater(sp.glow.filled(), 0)
+        self.assertLess(sp.glow.filled(), sp.filled() * 0.5)
+
 
 class TestGfx(unittest.TestCase):
     def test_framebuffer_column_fill_and_depth(self):
@@ -540,6 +582,53 @@ class TestGfx(unittest.TestCase):
         fb = FrameBuffer(20, 10)
         _blit_sprite(fb, px, 10, 9, 4, 1.0, 1.0, 1.0, 5.0,
                      flash=1.0, flash_color=color)
+
+    def test_far_dot_does_not_punch_through_near_depth(self):
+        from aldervale.gfx import PixelSprite
+        from aldervale.gfxrender import _dot
+        fb = FrameBuffer(20, 12)
+        fb.fill_column(5, 5, 6, 0x112233, 0.5)
+        sp = PixelSprite(2, 2, bytes([200, 30, 30, 255]) * 4)
+        _dot(fb, 5, 5, sp, 1.0, 1.0, 1.0, 50.0)
+        self.assertAlmostEqual(fb.sample_depth(5, 5), 0.5)
+        _dot(fb, 5, 5, sp, 1.0, 1.0, 1.0, 0.2)
+        self.assertAlmostEqual(fb.sample_depth(5, 5), 0.15)
+
+    def test_close_sprite_paints_visible_tail(self):
+        from aldervale.gfx import PixelSprite
+        from aldervale.gfxrender import _blit_sprite
+        fb = FrameBuffer(20, 20)
+        big = PixelSprite(53, 90,
+                          bytes([10, 200, 30, 255]) * (53 * 90))
+        _blit_sprite(fb, big, 10, 10, 40, 1.0, 1.0, 1.0, 5.0)
+        self.assertGreater(sum(fb.data), 0)
+
+    def test_cell_depth_rejects_zero_size(self):
+        from aldervale.gfxrender import _cell_depth
+        from aldervale.render import Camera
+        fb = FrameBuffer(20, 12)
+        self.assertEqual(
+            _cell_depth(fb, Camera(20, 12, 0.0, 0.0, 3.0, 0.0), 0, 12), [])
+
+    def test_gfx_camera_rejects_zero_size(self):
+        from aldervale.gfxrender import GfxCamera
+        from aldervale.render import Camera
+        with self.assertRaises(ValueError):
+            GfxCamera.from_camera(Camera(0, 12, 0.0, 0.0, 3.0, 0.0),
+                                  20, 12)
+
+    def test_blits_reject_nonfinite_rows(self):
+        from aldervale.gfx import PixelSprite
+        from aldervale.gfxrender import _blit_sprite
+        from aldervale.mesh import Sprite
+        fb = FrameBuffer(20, 12)
+        sp = PixelSprite(2, 2, bytes([200, 30, 30, 255]) * 4)
+        _blit_sprite(fb, sp, 10, 9, float("inf"), 1.0, 1.0, 1.0, 5.0)
+        _blit_sprite(fb, sp, 10, 9, float("nan"), 1.0, 1.0, 1.0, 5.0)
+        sc = Screen(20, 10)
+        cell = Sprite(["##"], [[0xFFFFFF] * 2], [[5] * 2])
+        sc.blit(cell, 10, 9, float("inf"))
+        sc.blit(cell, 10, 9, float("nan"))
 
     def test_ground_details_paints_tall_tufts_two_pixels_high(self):
         from aldervale.gfxrender import _ground_details
@@ -763,6 +852,20 @@ class TestWebGL(unittest.TestCase):
         self.assertEqual(payload["status"], "ready")
         self.assertIn("camera", payload)
 
+    def test_webgl_session_step_and_scene(self):
+        from aldervale.webgame import WebGame
+        session = WebGame(seed=7, width=96, height=48,
+                          render_mode="webgl")
+        try:
+            session.step()
+            self.assertIsNone(session.frame)
+            payload = session.scene()
+            self.assertEqual(payload["status"], "ready")
+            shot = session.snapshot()
+            self.assertEqual(shot["render_mode"], "webgl")
+        finally:
+            session.close()
+
     def test_webgl_page_has_a_token_slot(self):
         self.assertIn("__TOKEN__", PLAY3D_HTML)
         self.assertIn("webgl2", PLAY3D_HTML.lower())
@@ -888,29 +991,29 @@ class TestCliValidation(unittest.TestCase):
 
     def test_bad_fps_refused(self):
         code, err = self._run(["--fps", "3"])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 2)
         self.assertIn("What:", err)
         self.assertIn("Why:", err)
         self.assertIn("Fix:", err)
 
     def test_bad_width_refused(self):
         code, _ = self._run(["--width", "9999"])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 2)
 
     def test_bad_demo_seconds_refused(self):
         code, _ = self._run(["--demo", "-2"])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 2)
 
     def test_bad_gfx_size_refused(self):
         code, err = self._run(["--gfx-shot", "frame.png",
                                "--gfx-size", "10x10"])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 2)
         self.assertIn("What:", err)
 
     def test_unknown_gfx_scene_refused(self):
         code, err = self._run(["--gfx-shot", "frame.png",
                                "--gfx-scene", "nowhere"])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 2)
         self.assertIn("Use one of:", err)
 
 

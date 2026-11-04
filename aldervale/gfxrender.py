@@ -49,6 +49,12 @@ class GfxCamera:
 
     @classmethod
     def from_camera(cls, cam, w, h):
+        if cam.w <= 0 or cam.h <= 0:
+            raise ValueError(
+                "What: GfxCamera got a %sx%s camera. "
+                "Why: a zero-size camera cannot project pixels. "
+                "Fix: build the Camera with width and height >= 1."
+                % (cam.w, cam.h))
         sx = w / float(cam.w)
         sy = h / float(cam.h)
         half_tan = math.tan(FOV * 0.5)
@@ -82,6 +88,8 @@ def render_scene(fb, world, cam, env, cell_w=None, cell_h=None, models=None):
 
 def _cell_depth(fb, cam, cw, ch):
     rows = []
+    if cw <= 0 or ch <= 0:
+        return rows
     sx = fb.w / float(cw)
     sy = fb.h / float(ch)
     for cy in range(ch):
@@ -769,6 +777,8 @@ def _dot(fb, col, bottom, sprite, tr, tg, tb, depth_z):
         return
     color = pack_rgb(sprite.rgba[o] * tr, sprite.rgba[o + 1] * tg,
                      sprite.rgba[o + 2] * tb)
+    if fb.sample_depth(px, py) <= depth_z - 0.05:
+        return
     fb.set(px, py, color, depth_z - 0.05)
 
 
@@ -795,14 +805,14 @@ def _contact_shadow(fb, cam, ent, col, bottom, depth_z, rows):
 
 def _blit_sprite(fb, sprite, col, bottom, rows, tr, tg, tb, depth_z,
                  flash=0.0, flash_color=None, additive=0.0):
+    if not math.isfinite(rows):
+        return
     target_rows = int(rows)
     if target_rows < 1:
         return
     target_cols = int(target_rows * sprite.w / float(sprite.h))
     if target_cols < 1:
         return
-    max_rows = min(fb.h, target_rows)
-    max_cols = min(fb.w, target_cols)
     x0 = int(col - target_cols * 0.5)
     y0 = int(bottom - target_rows)
     lr = [min(255, int(v * tr + 0.5)) for v in range(256)]
@@ -820,13 +830,13 @@ def _blit_sprite(fb, sprite, col, bottom, rows, tr, tg, tb, depth_z,
         fr = (flash_color >> 16) & 255
         fg_ = (flash_color >> 8) & 255
         fb_ = flash_color & 255
-    for ty in range(max_rows):
+    for ty in range(target_rows):
         sy = int(ty * sprite.h / target_rows)
         py = y0 + ty
         if py < 0 or py >= fb.h:
             continue
         srow = sy * sw4
-        for tx in range(max_cols):
+        for tx in range(target_cols):
             px = x0 + tx
             if px < 0 or px >= fb.w:
                 continue

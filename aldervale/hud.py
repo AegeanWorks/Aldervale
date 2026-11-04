@@ -98,7 +98,7 @@ def draw_hud(screen, world, env, fps, show_map=True):
             show_num=False)
         bar(screen, 55, h - 4, 14, "XP", p.xp,
             xp_for_level(p.level), PURPLE, show_num=False)
-        if w >= 92:
+        if w >= 104:
             bar(screen, 82, h - 4, 6, "Pot", inv.count("potion"), 9, ORANGE,
                 show_num=True)
         else:
@@ -215,7 +215,7 @@ def draw_minimap(screen, world):
         if kind in ("wolf", "bandit", "skeleton", "captain"):
             ch = "x"
             col = RED
-        elif kind == "villager":
+        elif kind in ("villager", "guard"):
             ch = "o"
             col = GOLD
         else:
@@ -505,7 +505,7 @@ def draw_help(screen):
     panel_text(screen, bx, bw, by + 1, "HOW TO BE A HERO", GOLD)
     for i, line in enumerate(body[:bh - 5]):
         screen.text(bx + 2, by + 3 + i, fit_text(line, inner), WHITE)
-    screen.text(bx + 2, by + bh - 2, fit_text("[H] or [ESC] close", inner),
+    screen.text(bx + 2, by + bh - 2, fit_text("[any key] to return", inner),
                 DIM)
 
 
@@ -575,7 +575,7 @@ def draw_death(screen, world):
 
 def draw_pause(screen, sel):
     w, h = screen.w, screen.h
-    opts = ["[C]ontinue", "[S]ave and quit to title", "[H]elp",
+    opts = ["[C]ontinue", "Save and quit to title", "[H]elp",
             "[Q]uit without saving"]
     bw = min(40, w - 4)
     bh = 4 + len(opts)

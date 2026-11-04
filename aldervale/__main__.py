@@ -72,9 +72,9 @@ def _build_parser():
     return ap
 
 
-def _fail(what, why, fix):
+def _fail(what, why, fix, code=2):
     sys.stderr.write("What: %s\nWhy: %s\nFix: %s\n" % (what, why, fix))
-    return 1
+    return code
 
 
 def run(argv=None):
@@ -133,7 +133,7 @@ def run(argv=None):
                          "The port is busy or the launcher could not bind "
                          "localhost.",
                          "Use another port, e.g. --serve 8766, or stop the "
-                         "process using this one.")
+                         "process using this one.", code=1)
     if args.web_shot:
         return _web_shot(args)
     if args.gfx_shot:
@@ -169,7 +169,7 @@ def run(argv=None):
         return _fail("ALDERVALE stopped: %s" % exc,
                      "An unexpected error occurred inside the engine.",
                      "Report the message above with your terminal and "
-                     "Python version.")
+                     "Python version.", code=1)
 
 
 def _web_shot(args):
@@ -183,7 +183,7 @@ def _web_shot(args):
                      "The web shot needs the page written by a prior "
                      "--inspect run.",
                      "Run `python -m aldervale --inspect %s` first."
-                     % args.web_dir)
+                     % args.web_dir, code=1)
     text = args.web_size.lower().replace(",", "x")
     try:
         width, height = (int(v) for v in text.split("x", 1))
@@ -199,14 +199,14 @@ def _web_shot(args):
         return _fail("No Edge/Chrome browser was found.",
                      "Headless screenshots need a Chromium-family browser.",
                      "Install Edge or Chrome, set ALDERVALE_BROWSER to its "
-                     "path, or open %s manually." % html)
+                     "path, or open %s manually." % html, code=1)
     ok, detail = screenshot_studio(html, args.web_shot, args.web_query,
                                    (width, height))
     if not ok:
         return _fail("Headless screenshot failed: %s" % detail,
                      "The browser did not produce a usable image.",
                      "Retry, or open %s in a browser and capture it manually."
-                     % html)
+                     % html, code=1)
     print("wrote %s" % detail)
     return 0
 
@@ -244,7 +244,7 @@ def _gfx_shot(args):
     except OSError as exc:
         return _fail("Cannot write %s: %s" % (args.gfx_shot, exc),
                      "The output directory does not exist or is not writable.",
-                     "Create the folder or choose another path.")
+                     "Create the folder or choose another path.", code=1)
     print("wrote %s (%dx%d internal, %dx%d png)"
           % (args.gfx_shot, width, height, iw, ih))
     return 0
@@ -291,7 +291,7 @@ def _screenshot(game, path):
     except OSError as exc:
         return _fail("Cannot write screenshot to %s." % path,
                      "The path is unwritable: %s." % exc,
-                     "Choose a writable file path.")
+                     "Choose a writable file path.", code=1)
     return 0
 
 

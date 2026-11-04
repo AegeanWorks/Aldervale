@@ -466,7 +466,7 @@ def villager(pose=None, variant=0, role="peasant"):
         part(0.0, 1.4, 0.09, 0.15, 0.3, 0.07, C(222, 220, 214))
         part(0.0, 1.58, 0.02, 0.24, 0.16, 0.24, C(200, 198, 190))
         staff = MeshBuilder()
-        staff.box(0.0, 0.0, 0.0, 0.05, 1.7, 0.05, WOOD_D)
+        staff.box(0.0, 0.85, 0.0, 0.05, 1.7, 0.05, WOOD_D)
         staff.sphere(0.0, 1.74, 0.0, 0.07, 0.07, 0.07, 5, 3, CRYSTAL, emissive=True)
         b.merge(staff.build(), offset=(0.36, 0.0, 0.08))
     elif role == "smith":
@@ -618,7 +618,7 @@ def house(variant=0):
         b.box(i * 0.95 * scale, 0.45, 2.12 * scale, 0.86 * scale, 0.16,
               0.10, STONE if i % 2 == 0 else STONE_D)
         b.box(i * 0.95 * scale, 0.45, -2.12 * scale, 0.86 * scale, 0.16,
-              0.10, STONE if i % 2 else STONE_D)
+              0.10, STONE if i % 2 == 0 else STONE_D)
     for sx in (-1.0, 1.0):
         for sz in (-1.0, 1.0):
             b.box(sx * 2.2 * scale, 1.5, sz * 1.8 * scale, 0.2, 1.8, 0.2, WOOD_D)

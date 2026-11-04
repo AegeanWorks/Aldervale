@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `31`
 - **Total Classes**: `71`
-- **Total Top-Level Functions**: `227`
-- **Total Class Methods**: `464`
-- **Total Source Lines**: `16128`
+- **Total Top-Level Functions**: `228`
+- **Total Class Methods**: `491`
+- **Total Source Lines**: `16532`
 
 ---
 
@@ -26,11 +26,11 @@
 ### [`aldervale/__main__.py`](aldervale/__main__.py)
 > *ALDERVALE command line entry point.*
 
-**Size**: `352` lines (`15293` bytes)
+**Size**: `352` lines (`15360` bytes)
 
 **Functions:**
 - `def _build_parser()`
-- `def _fail(what, why, fix)`
+- `def _fail(what, why, fix, code)`
 - `def run(argv)`
 - `def _web_shot(args)`
 - `def _gfx_shot(args)`
@@ -44,7 +44,7 @@
 ### [`aldervale/atlas.py`](aldervale/atlas.py)
 > *Sprite atlas: bakes every (model, pose, yaw) combination at load time.*
 
-**Size**: `207` lines (`9792` bytes)
+**Size**: `207` lines (`9850` bytes)
 
 **Classes:**
 - `class SpriteAtlas` - *Baked sprite frames lookup: (model_key, pose_name) -> [yaw frames].*
@@ -61,7 +61,7 @@
 ### [`aldervale/buffer.py`](aldervale/buffer.py)
 > *Char-cell frame buffer: per-cell glyph, 24-bit colour and depth, diff flush.*
 
-**Size**: `267` lines (`9166` bytes)
+**Size**: `271` lines (`9269` bytes)
 
 **Classes:**
 - `class Screen` - *A w x h grid of characters with colour, depth and diff-based output.*
@@ -139,7 +139,7 @@
 ### [`aldervale/game.py`](aldervale/game.py)
 > *Game shell: states, input, camera, main loop, demo autopilot.*
 
-**Size**: `738` lines (`26447` bytes)
+**Size**: `748` lines (`26732` bytes)
 
 **Classes:**
 - `class Game` - *Drives one play session from title screen to victory.*
@@ -208,7 +208,7 @@
 ### [`aldervale/gfxatlas.py`](aldervale/gfxatlas.py)
 > *Pixel sprite atlas and source-mesh cache.*
 
-**Size**: `361` lines (`13083` bytes)
+**Size**: `361` lines (`13090` bytes)
 
 **Classes:**
 - `class PixelAtlas` - *Baked pixel frames: (model_key, pose_name) -> [PixelSprite].*
@@ -253,7 +253,7 @@
 ### [`aldervale/gfxrender.py`](aldervale/gfxrender.py)
 > *Truecolor scene renderer: sky, raster terrain, 3D models, billboards, weather.*
 
-**Size**: `926` lines (`34785` bytes)
+**Size**: `936` lines (`35164` bytes)
 
 **Classes:**
 - `class GfxCamera` - *Pixel projection derived from the cell camera, same view and alignment.*
@@ -288,7 +288,7 @@
 ### [`aldervale/hud.py`](aldervale/hud.py)
 > *HUD and menu rendering: bars, minimap, dialogue, shop, inventory, titles.*
 
-**Size**: `632` lines (`23968` bytes)
+**Size**: `632` lines (`23979` bytes)
 
 **Classes:**
 - `class ItemStub`
@@ -376,7 +376,7 @@
 ### [`aldervale/launcher.py`](aldervale/launcher.py)
 > *Localhost web launcher for Aldervale.*
 
-**Size**: `458` lines (`17699` bytes)
+**Size**: `473` lines (`18187` bytes)
 
 **Classes:**
 - `class Handler`
@@ -390,6 +390,7 @@
 - `def spawn_game(mode)` - *Open the real game in a new console window (Windows).*
 - `def render_page(token)`
 - `def ensure_web_session(server)` - *Start building the browser-play session once, in the background.*
+- `def _apply_scene_query(world, weather, day_t)` - *Apply /play3d query overrides; ignore anything invalid.*
 - `def ensure_web_session3d(server, weather, day_t)` - *Start building the WebGL session once, in the background.*
 - `def play3d_url(port)`
 - `def launcher_url(port, autostart)` - *The local URL, optionally asking the page to start the game on load.*
@@ -461,7 +462,7 @@
 ### [`aldervale/models.py`](aldervale/models.py)
 > *Every 3D model in the realm: actors, creatures, flora and architecture.*
 
-**Size**: `970` lines (`42976` bytes)
+**Size**: `970` lines (`42982` bytes)
 
 **Functions:**
 - `def C(r, g, b)`
@@ -717,12 +718,13 @@
 ### [`aldervale/world.py`](aldervale/world.py)
 > *The world of Aldervale: generation, simulation, quests and persistence.*
 
-**Size**: `848` lines (`36257` bytes)
+**Size**: `908` lines (`38729` bytes)
 
 **Classes:**
 - `class World` - *Owns terrain, entities, the player, quests and the world clock.*
   - Method `.__init__(seed, atlas, day_length, terrain_size)`
   - Method `._next_eid()`
+  - Method `._reserve_eid(eid)` - *Advance the eid counter past a restored id (save/load).*
   - Method `._generate()`
   - Method `._walkable_near(x, z, radius)`
   - Method `._spawn_hostile(kind, x, z, yaw)` - *Spawn a hostile from its canon template at a walkable spot.*
@@ -766,7 +768,7 @@
 ### [`tests/test_aldervale.py`](tests/test_aldervale.py)
 > *Unit tier: fast in-process checks for the pure engine core.*
 
-**Size**: `1087` lines (`44433` bytes)
+**Size**: `1190` lines (`48845` bytes)
 
 **Classes:**
 - `class FakeTerm`
@@ -807,6 +809,8 @@
   - Method `.test_knight_cape_and_shield_reach_behind_and_outboard()`
   - Method `.test_boulders_are_rounded()`
   - Method `.test_cylinder_z_axis_is_round()`
+  - Method `.test_elder_staff_clears_the_ground()`
+  - Method `.test_house_plinth_tones_match_front_and_back()`
   - Method `.test_campfire_has_a_stone_ring_logs_and_layered_flames()`
   - Method `.test_torch_flame_is_compact_and_basketed()`
   - Method `.test_well_has_a_stone_rim_thatch_and_crank()`
@@ -833,10 +837,17 @@
   - Method `.test_heights_registered()`
   - Method `.test_pixel_atlas_ctor_yaw_steps_honored()`
   - Method `.test_guard_pose_drives_limbs()`
+  - Method `.test_elder_smith_walk_swings_arms()`
+  - Method `.test_pixel_glow_is_emissive_only()`
 - `class TestGfx`
   - Method `.test_framebuffer_column_fill_and_depth()`
   - Method `.test_framebuffer_blend_and_row_major_scale()`
   - Method `.test_hit_flash_contract_roundtrip()`
+  - Method `.test_far_dot_does_not_punch_through_near_depth()`
+  - Method `.test_close_sprite_paints_visible_tail()`
+  - Method `.test_cell_depth_rejects_zero_size()`
+  - Method `.test_gfx_camera_rejects_zero_size()`
+  - Method `.test_blits_reject_nonfinite_rows()`
   - Method `.test_ground_details_paints_tall_tufts_two_pixels_high()`
   - Method `.test_bake_pixel_sprite_crops_and_sets_alpha()`
   - Method `.test_bake_pixel_sprite_keeps_emissive_glow()`
@@ -851,6 +862,7 @@
   - Method `.test_model_bundle_covers_every_pose()`
   - Method `.test_world_scene_and_raycast()`
   - Method `.test_scene_without_prior_render_env()`
+  - Method `.test_webgl_session_step_and_scene()`
   - Method `.test_webgl_page_has_a_token_slot()`
   - Method `.test_webgl_compact_hud_keeps_rows_apart()`
   - Method `.test_webgl_page_draws_additive_light_glow()`
@@ -898,7 +910,7 @@
 ### [`tests/test_integration.py`](tests/test_integration.py)
 > *Integration tier: world generation, quest chain, rendering and the CLI.*
 
-**Size**: `1845` lines (`71149` bytes)
+**Size**: `2047` lines (`79502` bytes)
 
 **Classes:**
 - `class TestTerrain`
@@ -938,6 +950,14 @@
   - Method `.test_grave_warden_guards_the_camp()`
   - Method `.test_captain_skips_respawn_queue()`
   - Method `.test_save_load_roundtrip()`
+  - Method `.test_buy_rejects_unknown_and_quest_items()`
+  - Method `.test_sell_equipped_falls_back_to_owned()`
+  - Method `.test_load_rejects_bad_schema_and_repairs_gear()`
+  - Method `.test_load_preserves_weapon_and_armor()`
+  - Method `.test_save_preserves_ground_amulet()`
+  - Method `.test_all_mobile_spawns_are_walkable()`
+  - Method `.test_walkable_near_returns_none_when_surrounded()`
+  - Method `.test_load_rejects_missing_and_malformed_saves()`
   - Method `.test_weather_cycles_without_consuming_game_rng()`
   - Method `.test_location_plate_shows_weather()`
   - Method `.get_temp_dir()`
@@ -996,6 +1016,7 @@
   - Method `.test_camera_keeps_full_distance_on_flat_ground()`
 - `class TestInspection` - *The headless lens: PNG scenes, text mirrors and the control probe.*
   - Method `.test_inspection_writes_png_text_and_report()`
+  - Method `.test_castle_scenes_at_small_terrain()`
   - Method `.test_probe_controls_all_pass()`
 - `class TestResponsiveMenus` - *Every menu panel must stay inside its own box at any viewport size.*
   - Method `._screen(width, height)`
@@ -1011,12 +1032,15 @@
   - Method `._world()`
   - Method `.test_gold_pickups_collected_same_frame()`
   - Method `.test_hud_bars_do_not_overlap()`
+  - Method `.test_pot_bar_needs_104_columns()`
+  - Method `.test_minimap_shows_guard()`
   - Method `.test_hud_adapts_to_narrow_viewports()`
   - Method `.test_death_transitions_to_dead_state()`
   - Method `.test_gate_guards_spawn_as_twins()`
   - Method `.test_npc_talk_delegates_to_story()`
 - `class TestLaunchers` - *The one-click run buttons: PLAY.bat, run.sh and the VS Code config.*
   - Method `.test_play_bat_version_fastpath()`
+  - Method `.test_scene_query_ignores_invalid_overrides()`
   - Method `.test_web_launchers_are_one_click()`
   - Method `.test_web_launchers_detect_python_like_play_bat()`
   - Method `.test_play_web_version_fastpath()`
@@ -1059,6 +1083,10 @@
   - Method `.test_continue_without_save_starts_world()`
   - Method `.test_mouse_click_on_new_game_starts_world()`
   - Method `.test_title_arrows_and_enter_choose_continue()`
+  - Method `._flow_game()`
+  - Method `.test_pause_shortcuts()`
+  - Method `.test_demo_leaves_death_screen_alone()`
+  - Method `.test_dialogue_empty_choices_do_not_crash()`
   - Method `.test_mouse_click_on_help_opens_help()`
 - `class TestMechanics` - *Combat simulation mechanics: guard, facing, backstab, potions, respawn.*
   - Method `._world()`

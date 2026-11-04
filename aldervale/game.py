@@ -226,7 +226,10 @@ class Game:
             self._open_screen()
 
     def _demo_steer(self, dt):
-        self.state = "play"
+        if self.state == "title":
+            self.state = "play"
+        if self.state != "play":
+            return
         p = self.world.player
         p.moving = False
         self.cam_yaw += dt * 0.18
@@ -585,6 +588,8 @@ class Game:
                 self.dlg_page += 1
             return
         choices = dlg["choices"]
+        if not choices:
+            return
         if key in ("up", "w"):
             self.dlg_choice = (self.dlg_choice - 1) % len(choices)
         elif key in ("down", "s"):
@@ -660,6 +665,11 @@ class Game:
     def _key_pause(self, key):
         if key == "esc" or key == "c":
             self.state = "play"
+        elif key == "h":
+            self.help_from = "pause"
+            self.state = "help"
+        elif key == "q":
+            self.running = False
         elif key in ("up", "w"):
             self.menu_sel = (self.menu_sel - 1) % 4
         elif key in ("down", "s"):

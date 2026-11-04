@@ -8,6 +8,7 @@ is used.
 """
 
 import json
+import math
 import mimetypes
 import os
 import secrets
@@ -82,6 +83,25 @@ def ensure_web_session(server):
     threading.Thread(target=build, daemon=True).start()
 
 
+def _apply_scene_query(world, weather=None, day_t=None):
+    """Apply /play3d query overrides; ignore anything invalid.
+
+    The 3D session is a singleton, so a bad query must never poison it:
+    unknown weather names and non-finite day fractions fall back to the
+    world's current state instead of raising or storing NaN.
+    """
+    if weather in ("clear", "rain", "snow"):
+        world.set_weather(weather)
+    day = None
+    try:
+        day = float(day_t) if day_t is not None else None
+    except (TypeError, ValueError):
+        day = None
+    if day is not None and math.isfinite(day):
+        world.time = ((day - 0.20) % 1.0) * world.day_length
+        world.day_t = day
+
+
 def ensure_web_session3d(server, weather=None, day_t=None):
     """Start building the WebGL session once, in the background."""
     with server.web_lock3d:
@@ -97,12 +117,7 @@ def ensure_web_session3d(server, weather=None, day_t=None):
             from .webgame import WebGame
             session = WebGame(seed=7, width=132, height=60,
                               render_mode="webgl")
-            if weather:
-                session.game.world.set_weather(weather)
-            if day_t is not None:
-                world = session.game.world
-                world.time = ((float(day_t) - 0.20) % 1.0) * world.day_length
-                world.day_t = float(day_t)
+            _apply_scene_query(session.game.world, weather, day_t)
         except Exception as exc:
             error = "%s: %s" % (type(exc).__name__, exc)
         with server.web_lock3d:

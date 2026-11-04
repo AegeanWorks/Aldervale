@@ -329,7 +329,7 @@ def bake_pixel_sprite(mesh, yaw=0.0, pitch=0.30, dist=9.0, f=140.0,
                 (p3[0], p3[1], p3[2], lums[3]))
         _raster_tri(img, zbuf, cw, ch, tri0, shades, face_lum, box)
         _raster_tri(img, zbuf, cw, ch, tri1, shades, face_lum, box)
-        if glow_img is not None:
+        if glow_img is not None and em:
             _raster_tri(glow_img, glow_zbuf, cw, ch, tri0, [col], 1.0, box)
             _raster_tri(glow_img, glow_zbuf, cw, ch, tri1, [col], 1.0, box)
     if box[2] < box[0]:

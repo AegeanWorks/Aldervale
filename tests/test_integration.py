@@ -427,6 +427,98 @@ class TestWorldSim(unittest.TestCase):
         self.assertEqual(w2.weather, "rain")
         self.assertEqual(len(w2.entities), len(w.entities))
 
+    def test_buy_rejects_unknown_and_quest_items(self):
+        w = self._world()
+        w.player.inventory.add("gold", 500)
+        self.assertFalse(w.buy("crown"))
+        self.assertFalse(w.buy("amulet"))
+        self.assertEqual(w.player.inventory.count("amulet"), 0)
+        self.assertEqual(w.quest, "none")
+        self.assertTrue(w.buy("potion"))
+
+    def test_sell_equipped_falls_back_to_owned(self):
+        w = self._world()
+        w.player.inventory.add("gold", 500)
+        self.assertTrue(w.buy("iron_sword"))
+        self.assertEqual(w.player.inventory.weapon, "iron_sword")
+        self.assertTrue(w.sell("iron_sword"))
+        self.assertEqual(w.player.inventory.count("iron_sword"), 0)
+        self.assertEqual(w.player.inventory.weapon, "rusty_sword")
+        self.assertEqual(w.player.inventory.total_atk(5), 8)
+
+    def test_load_rejects_bad_schema_and_repairs_gear(self):
+        bad = os.path.join(self.get_temp_dir(), "bad.json")
+        with open(bad, "w", encoding="utf-8") as f:
+            f.write("{}")
+        with self.assertRaises(ValueError):
+            World.load(bad, None, terrain_size=SMALL)
+        w = self._world()
+        w.player.inventory.add("gold", 900)
+        w.buy("iron_sword")
+        w.buy("chain_mail")
+        path = os.path.join(self.get_temp_dir(), "gear.json")
+        w.save(path)
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        data["player"]["weapon"] = "debug_sword"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        w2 = World.load(path, None, terrain_size=SMALL)
+        self.assertEqual(w2.player.inventory.weapon, "rusty_sword")
+        self.assertEqual(w2.player.inventory.armor, "chain_mail")
+
+    def test_load_preserves_weapon_and_armor(self):
+        w = self._world()
+        w.player.inventory.add("gold", 900)
+        w.buy("iron_sword")
+        w.buy("chain_mail")
+        path = os.path.join(self.get_temp_dir(), "gear2.json")
+        w.save(path)
+        w2 = World.load(path, None, terrain_size=SMALL)
+        self.assertEqual(w2.player.inventory.weapon, "iron_sword")
+        self.assertEqual(w2.player.inventory.armor, "chain_mail")
+        self.assertEqual(w2.player.inventory.total_atk(5), 12)
+        self.assertEqual(w2.player.inventory.total_dfn(2), 9)
+
+    def test_save_preserves_ground_amulet(self):
+        from aldervale import entities as ent
+        w = self._world()
+        pk = ent.Pickup("e99999", "amulet", 1, w.player.x, w.player.z,
+                        0.45, quest=True)
+        w._add(pk)
+        path = os.path.join(self.get_temp_dir(), "amulet.json")
+        w.save(path)
+        w2 = World.load(path, None, terrain_size=SMALL)
+        drops = [e for e in w2.entities
+                 if isinstance(e, ent.Pickup) and e.item_id == "amulet"]
+        self.assertEqual(len(drops), 1)
+        self.assertEqual(drops[0].eid, "e99999")
+        self.assertTrue(drops[0].quest)
+        eids = [e.eid for e in w2.entities]
+        self.assertEqual(len(eids), len(set(eids)))
+
+    def test_all_mobile_spawns_are_walkable(self):
+        from aldervale import entities as ent
+        w = self._world()
+        for e in w.entities:
+            if isinstance(e, ent.Actor) and e.kind != "wyvern":
+                self.assertTrue(w.terrain.walkable(e.x, e.z),
+                                (e.kind, e.eid, e.x, e.z))
+
+    def test_walkable_near_returns_none_when_surrounded(self):
+        w = self._world()
+        self.assertIsNone(w._walkable_near(2, 2, radius=1))
+
+    def test_load_rejects_missing_and_malformed_saves(self):
+        with self.assertRaises(FileNotFoundError):
+            World.load(os.path.join(self.get_temp_dir(), "nope.json"),
+                       None, terrain_size=SMALL)
+        bad = os.path.join(self.get_temp_dir(), "bad.json")
+        with open(bad, "w", encoding="utf-8") as f:
+            f.write("{oops")
+        with self.assertRaises(json.JSONDecodeError):
+            World.load(bad, None, terrain_size=SMALL)
+
     def test_weather_cycles_without_consuming_game_rng(self):
         w = self._world()
         w.set_weather("clear")
@@ -492,9 +584,10 @@ def _rmtree(d):
 class TestGameShell(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        tmp = tempfile.mkdtemp(prefix="av_test_game_")
+        cls.addClassCleanup(_rmtree, tmp)
         cls.game = Game(seed=3, width=80, height=40,
-                        save_path=os.path.join(tempfile.gettempdir(),
-                                               "av_test_save.json"))
+                        save_path=os.path.join(tmp, "av_test_save.json"))
         cls.game.term = None
         cls.game.atlas = _tiny_atlas()
         cls.game.world = World(3, cls.game.atlas)
@@ -659,27 +752,27 @@ class TestCliSubprocess(unittest.TestCase):
 
     def test_autostart_requires_serve(self):
         r = self._run("--autostart")
-        self.assertEqual(r.returncode, 1)
+        self.assertEqual(r.returncode, 2)
         self.assertIn("--autostart needs --serve", r.stderr)
 
     def test_open_play_requires_serve(self):
         r = self._run("--open-play")
-        self.assertEqual(r.returncode, 1)
+        self.assertEqual(r.returncode, 2)
         self.assertIn("--open-play needs --serve", r.stderr)
 
     def test_open_play_conflicts_with_autostart(self):
         r = self._run("--serve", "--open-play", "--autostart")
-        self.assertEqual(r.returncode, 1)
+        self.assertEqual(r.returncode, 2)
         self.assertIn("different targets", r.stderr)
 
     def test_serve_port_validation(self):
         r = self._run("--serve", "70000")
-        self.assertEqual(r.returncode, 1)
+        self.assertEqual(r.returncode, 2)
         self.assertIn("--serve PORT", r.stderr)
 
     def test_open_requires_serve(self):
         r = self._run("--open")
-        self.assertEqual(r.returncode, 1)
+        self.assertEqual(r.returncode, 2)
         self.assertIn("--open needs --serve", r.stderr)
 
     def test_web_shot_requires_a_studio_page(self):
@@ -941,6 +1034,27 @@ class TestInspection(unittest.TestCase):
             self.assertEqual(f.read(8), b"\x89PNG\r\n\x1a\n")
         with open(os.path.join(out, "report.json"), encoding="utf-8") as f:
             self.assertIn('"viewport"', f.read())
+        with open(os.path.join(out, "report.json"), encoding="utf-8") as f:
+            manifest = json.load(f)
+        for key in ("seed", "viewport", "scale", "scenes", "checks",
+                    "failed", "elapsed_s"):
+            self.assertIn(key, manifest)
+        self.assertEqual(len(manifest["scenes"]), 2)
+        for entry in manifest["scenes"]:
+            for key in ("name", "file", "day_t", "top_colors"):
+                self.assertIn(key, entry)
+
+    def test_castle_scenes_at_small_terrain(self):
+        out = tempfile.mkdtemp(prefix="aldervale_castle_")
+        self.addCleanup(_rmtree, out)
+        report = run_inspection(out, seed=3, width=64, height=30,
+                                terrain_size=SMALL, scale=1,
+                                scenes=["castle", "camp_night"], probe=False,
+                                atlas_keys=self.KEYS)
+        self.assertEqual(len(report["scenes"]), 2)
+        for name in ("04_castle.png", "04_castle.txt",
+                     "05_camp_night.png", "05_camp_night.txt"):
+            self.assertTrue(os.path.exists(os.path.join(out, name)), name)
 
     def test_probe_controls_all_pass(self):
         game = build_game(seed=3, width=80, height=40,
@@ -1114,6 +1228,34 @@ class TestReviewFixes(unittest.TestCase):
         self.assertLess(stam, xp)
         self.assertLess(xp, pot)
 
+    def test_pot_bar_needs_104_columns(self):
+        w = self._world()
+        w.player.inventory.add("potion", 9)
+        from aldervale import hud
+        scr = Screen(100, 40, color=True)
+        hud.draw_hud(scr, w, Env(0.25, 0.0), 60)
+        rows = ["".join(row) for row in scr.chars]
+        self.assertIn("Pot 10", rows[scr.h - 5])
+        self.assertNotIn("Pot", rows[scr.h - 4])
+        scr = Screen(110, 50, color=True)
+        hud.draw_hud(scr, w, Env(0.25, 0.0), 60)
+        row = "".join(scr.chars[scr.h - 4])
+        self.assertIn("10/9", row)
+
+    def test_minimap_shows_guard(self):
+        w = self._world()
+        from aldervale import hud
+        for e in w.entities:
+            if getattr(e, "kind", "") == "villager":
+                e.x += 1000.0
+        guard = next(e for e in w.entities
+                     if getattr(e, "kind", "") == "guard")
+        w.player.x, w.player.z = guard.x + 2.0, guard.z
+        scr = Screen(110, 50, color=True)
+        hud.draw_minimap(scr, w)
+        flat = "".join("".join(row) for row in scr.chars)
+        self.assertIn("o", flat)
+
     def test_hud_adapts_to_narrow_viewports(self):
         w = self._world()
         from aldervale import hud
@@ -1193,6 +1335,21 @@ class TestLaunchers(unittest.TestCase):
             cwd=PROJECT, capture_output=True, text=True, timeout=120)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("ALDERVALE", r.stdout)
+
+    def test_scene_query_ignores_invalid_overrides(self):
+        from aldervale.launcher import _apply_scene_query
+        w = World(3, None, terrain_size=SMALL)
+        _apply_scene_query(w, "rain", 0.3)
+        self.assertEqual(w.weather, "rain")
+        self.assertAlmostEqual(w.day_t, 0.3)
+        _apply_scene_query(w, "evil", float("nan"))
+        self.assertEqual(w.weather, "rain")
+        self.assertAlmostEqual(w.day_t, 0.3)
+        _apply_scene_query(w, "snow", float("inf"))
+        self.assertEqual(w.weather, "snow")
+        self.assertAlmostEqual(w.day_t, 0.3)
+        _apply_scene_query(w, None, "not-a-number")
+        self.assertAlmostEqual(w.day_t, 0.3)
 
     def test_web_launchers_are_one_click(self):
         for name, needles in (
@@ -1592,6 +1749,51 @@ class TestTitleFlow(unittest.TestCase):
         g.term.queue_press(["enter"])
         g._handle_keys()
         self.assertEqual(g.state, "play")
+
+    def _flow_game(self):
+        g = Game(seed=3, terrain_size=SMALL, width=80, height=40)
+        g.term = FakePollTerm()
+        g.atlas = _tiny_atlas()
+        g.world = World(3, g.atlas, terrain_size=SMALL)
+        g._open_screen()
+        g._ensure_camera()
+        return g
+
+    def test_pause_shortcuts(self):
+        g = self._flow_game()
+        g.state = "pause"
+        g.menu_sel = 0
+        g._key_pause("s")
+        self.assertEqual(g.menu_sel, 1)
+        g._key_pause("h")
+        self.assertEqual(g.state, "help")
+        self.assertEqual(g.help_from, "pause")
+        g.state = "pause"
+        g.running = True
+        g._key_pause("q")
+        self.assertFalse(g.running)
+
+    def test_demo_leaves_death_screen_alone(self):
+        g = self._flow_game()
+        g.demo_secs = 9
+        g.state = "dead"
+        yaw = g.cam_yaw
+        g._demo_steer(0.016)
+        self.assertEqual(g.state, "dead")
+        g.state = "title"
+        g._demo_steer(0.016)
+        self.assertEqual(g.state, "play")
+        self.assertNotEqual(g.cam_yaw, yaw)
+
+    def test_dialogue_empty_choices_do_not_crash(self):
+        g = self._flow_game()
+        g.state = "dialogue"
+        g.dialogue = {"pages": ["x"], "choices": []}
+        g.dlg_page = 0
+        g.dlg_choice = 0
+        for key in ("up", "down", "space", "1"):
+            g._key_dialogue(key)
+        self.assertEqual(g.state, "dialogue")
 
     def test_mouse_click_on_help_opens_help(self):
         from aldervale import hud

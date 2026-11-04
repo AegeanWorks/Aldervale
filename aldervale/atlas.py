@@ -65,12 +65,12 @@ MODEL_SPECS = {
         "dead": {"dead": 1.0},
     }, size=(1.4, 1.95), height=1.85, cells=34),
     "elder": _spec(models.villager, {
-        "idle": {}, "walk0": {"leg_l": 0.3, "lean": 0.05},
-        "walk1": {"leg_l": -0.3, "lean": -0.05},
+        "idle": {}, "walk0": {"leg_l": 0.3, "leg_r": -0.3, "lean": 0.05},
+        "walk1": {"leg_l": -0.3, "leg_r": 0.3, "lean": -0.05},
     }, size=(1.2, 1.95), height=1.9, cells=30, kwargs={"role": "elder"}),
     "smith": _spec(models.villager, {
-        "idle": {}, "walk0": {"leg_l": 0.3, "lean": 0.05},
-        "walk1": {"leg_l": -0.3, "lean": -0.05},
+        "idle": {}, "walk0": {"leg_l": 0.3, "leg_r": -0.3, "lean": 0.05},
+        "walk1": {"leg_l": -0.3, "leg_r": 0.3, "lean": -0.05},
     }, size=(1.2, 1.9), height=1.85, cells=30, kwargs={"role": "smith"}),
     "peasant0": _spec(models.villager, {
         "idle": {}, "walk0": WALK[0], "walk1": WALK[1],
