@@ -5,6 +5,8 @@
 <p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-AGL--1.1-7048e8" alt="License"></a> <a href="https://github.com/AegeanWorks/AIKit"><img src="https://img.shields.io/badge/AIKit-integrated-6f42c1" alt="AIKit Integrated"></a></p>
 <!-- aegean:media:end -->
 
+> **Archived**: Retired experiment (archived 2026-11-05). This project is read-only; its GitHub repository is archived.
+
 
 ALDERVALE - a 2.5D medieval RPG with three renderers over one engine: a GPU
 WebGL2 build, a software pixel build and a dense ASCII terminal build. Low-poly
