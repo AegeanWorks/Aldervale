@@ -15,14 +15,20 @@ _RAMP_INDEX = {ch: i for i, ch in enumerate(RAMP)}
 
 def pack_rgb(r, g, b):
     """Pack float channels into 0xRRGGBB, clamping overflow to 0..255."""
+    if not math.isfinite(r):
+        r = 0.0 if r != r else (255.0 if r > 0 else 0.0)
     if r > 255.0:
         r = 255.0
     elif r < 0.0:
         r = 0.0
+    if not math.isfinite(g):
+        g = 0.0 if g != g else (255.0 if g > 0 else 0.0)
     if g > 255.0:
         g = 255.0
     elif g < 0.0:
         g = 0.0
+    if not math.isfinite(b):
+        b = 0.0 if b != b else (255.0 if b > 0 else 0.0)
     if b > 255.0:
         b = 255.0
     elif b < 0.0:

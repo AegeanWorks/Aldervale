@@ -502,7 +502,11 @@ class World:
             if busy:
                 keep.append(r)
                 continue
-            self._spawn_hostile(r["kind"], r["x"], r["z"])
+            spawned = self._spawn_hostile(r["kind"], r["x"], r["z"])
+            if spawned is None:
+                r["t"] = 30.0
+                keep.append(r)
+                continue
         self.respawn = keep
 
     def add_message(self, text, color=INFO_COLOR):
@@ -898,11 +902,34 @@ class World:
                 e.model = "chest_o"
         have = {e.eid for e in world.entities}
         for g in data.get("ground", []):
-            if g["eid"] in have:
+            if not isinstance(g, dict):
                 continue
-            world._add(ent.Pickup(g["eid"], g["item"], g.get("n", 1),
-                                  g["x"], g["z"], g.get("h", 0.3),
-                                  quest=g.get("quest", False)))
+            if g.get("eid") in have or g.get("eid") is None:
+                continue
+            try:
+                gx, gz = float(g["x"]), float(g["z"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not math.isfinite(gx) or not math.isfinite(gz):
+                continue
+            item = g.get("item")
+            if not isinstance(item, str) or not item:
+                continue
+            try:
+                n = int(g.get("n", 1))
+            except (TypeError, ValueError):
+                n = 1
+            if n < 1:
+                n = 1
+            try:
+                h = float(g.get("h", 0.3))
+            except (TypeError, ValueError):
+                h = 0.3
+            if not math.isfinite(h):
+                h = 0.3
+            world._add(ent.Pickup(g["eid"], item, n,
+                                  gx, gz, h,
+                                  quest=bool(g.get("quest", False))))
             have.add(g["eid"])
             world._reserve_eid(g["eid"])
         return world

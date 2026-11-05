@@ -1025,6 +1025,14 @@ class TestReviewRegressions(unittest.TestCase):
         self.assertEqual(pack_rgb(-5, -1, 0), 0)
         self.assertEqual(pack_rgb(255.6, 254.9, 0.4), pack_rgb(255, 254, 0))
 
+    def test_pack_rgb_survives_nonfinite_channels(self):
+        nan = float("nan")
+        self.assertEqual(pack_rgb(nan, 10, 20), pack_rgb(0, 10, 20))
+        self.assertEqual(pack_rgb(10, nan, 20), pack_rgb(10, 0, 20))
+        self.assertEqual(pack_rgb(10, 20, nan), pack_rgb(10, 20, 0))
+        self.assertEqual(pack_rgb(float("inf"), 0, 0), pack_rgb(255, 0, 0))
+        self.assertEqual(pack_rgb(0, float("-inf"), 0), 0)
+
     def test_water_fog_reaches_fog_colour(self):
         from types import SimpleNamespace
 

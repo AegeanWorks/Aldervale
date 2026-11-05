@@ -519,6 +519,35 @@ class TestWorldSim(unittest.TestCase):
         with self.assertRaises(json.JSONDecodeError):
             World.load(bad, None, terrain_size=SMALL)
 
+    def test_load_skips_malformed_ground_entries(self):
+        w = self._world()
+        path = os.path.join(self.get_temp_dir(), "ground.json")
+        w.save(path)
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        data["ground"].append({"eid": "e99901", "item": "potion",
+                               "n": 1, "x": float("inf"), "z": 0.0})
+        data["ground"].append({"eid": "e99902"})
+        data["ground"].append("not-a-dict")
+        data["ground"].append({"eid": "e99903", "item": "", "n": 1,
+                               "x": 1.0, "z": 2.0})
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        w2 = World.load(path, None, terrain_size=SMALL)
+        eids = {e.eid for e in w2.entities}
+        self.assertNotIn("e99901", eids)
+        self.assertNotIn("e99902", eids)
+        self.assertNotIn("e99903", eids)
+
+    def test_respawn_kept_when_spawn_spot_unwalkable(self):
+        w = self._world()
+        w.respawn = [{"kind": "wolf", "x": 2.0, "z": 2.0, "t": 0.0}]
+        w.player.x, w.player.z = 100.0, 100.0
+        w._walkable_near = lambda *a, **k: None
+        w._tick_respawns(0.1)
+        self.assertEqual(len(w.respawn), 1)
+        self.assertEqual(w.respawn[0]["t"], 30.0)
+
     def test_weather_cycles_without_consuming_game_rng(self):
         w = self._world()
         w.set_weather("clear")
